@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password_hash String
+  name          String
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  profile       UserProfile?
+  applications  Application[]
+  resumes       Resume[]
+  interviews    MockInterview[]
+}
+
+model UserProfile {
+  id                     String   @id @default(uuid())
+  user_id                String   @unique
+  user                   User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  target_role            String
+  target_industry        String
+  experience_level       String
+  skills                 String[] 
+  academic_project_summary String? @db.Text 
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+}
+
+enum ApplicationStage {
+  APPLIED
+  OA
+  INTERVIEW
+  OFFER
+  REJECTED
+}
+
+model Application {
+  id                   String           @id @default(uuid())
+  user_id              String
+  user                 User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company_name         String
+  job_title            String
+  stage                ApplicationStage @default(APPLIED)
+  salary_package       String?
+  job_description_text String?          @db.Text
+  applied_date         DateTime         @default(now())
+  reminder_date        DateTime?
+  created_at           DateTime         @default(now())
+  updated_at           DateTime         @updatedAt
+
+  interviews           MockInterview[]
+}
+
+model Resume {
+  id                     String   @id @default(uuid())
+  user_id                String
+  user                   User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  file_url               String
+  parsed_text            String?  @db.Text
+  parsed_json_data       Json?
+  ats_score              Int?
+  detected_gaps          Json?
+  actionable_suggestions Json?
+  personalized_questions Json?
+  created_at             DateTime @default(now())
+  updated_at             DateTime @default(now()) @updatedAt
+}
+
+model MockInterview {
+  id                      String   @id @default(uuid())
+  user_id                 String
+  user                    User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  application_id          String?
+  application             Application? @relation(fields: [application_id], references: [id], onDelete: SetNull)
+  job_profile             String
+  overall_score           Float?
+  communication_score     Float?
+  technical_score         Float?
+  problem_solving_score   Float?
+  created_at              DateTime @default(now())
+
+  chatHistory             InterviewChatHistory[]
+}
+
+enum ChatRole {
+  SYSTEM
+  INTERVIEWER
+  USER
+}
+
+model InterviewChatHistory {
+  id                  String        @id @default(uuid())
+  interview_id        String
+  interview           MockInterview @relation(fields: [interview_id], references: [id], onDelete: Cascade)
+  role                ChatRole
+  message_content     String        @db.Text
+  evaluation_feedback Json?         // Metrics for this specific response
+  timestamp           DateTime      @default(now())
+}
