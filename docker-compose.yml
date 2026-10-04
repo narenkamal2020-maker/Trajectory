@@ -1,0 +1,53 @@
+# Full stack: Oracle XE + API/web + ML service.
+#   cp .env.example .env   # set secrets
+#   docker compose up --build
+# Then open http://localhost:3001
+services:
+  oracle:
+    image: gvenzl/oracle-xe:21-slim
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_ADMIN_PASSWORD:?set ORACLE_ADMIN_PASSWORD}
+      APP_USER: trajectory
+      APP_USER_PASSWORD: ${ORACLE_PASSWORD:?set ORACLE_PASSWORD}
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+  ml:
+    build: ./ml
+    restart: unless-stopped
+
+  api:
+    build: .
+    depends_on:
+      oracle:
+        condition: service_healthy
+      ml:
+        condition: service_started
+    environment:
+      ORACLE_USER: trajectory
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD}
+      ORACLE_CONNECTION_STRING: oracle:1521/XEPDB1
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set JWT_REFRESH_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
+      ML_SERVICE_URL: http://ml:8000
+      LLM_PROVIDER: ${LLM_PROVIDER:-none}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    ports:
+      - "3001:3001"
+    volumes:
+      # App installers shown in Settings → "Get the apps" (fill with: npm --prefix backend run downloads:publish)
+      - ./backend/downloads:/app/backend/downloads:ro
+    restart: unless-stopped
+
+volumes:
+  oracle-data:

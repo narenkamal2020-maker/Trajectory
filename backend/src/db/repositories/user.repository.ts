@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { query, execute } from '../oracle';
+import { query, execute } from '../../config/oracle';
 
 export interface User {
   USER_ID: string;
@@ -8,6 +8,7 @@ export interface User {
   FULL_NAME: string;
   AVATAR_URL?: string;
   IS_ACTIVE: number;
+  USER_ROLE: 'USER' | 'ADMIN';
   CREATED_AT: Date;
   UPDATED_AT: Date;
 }

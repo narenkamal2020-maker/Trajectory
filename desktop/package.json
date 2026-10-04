@@ -1,0 +1,43 @@
+{
+  "name": "trajectory-desktop",
+  "version": "1.0.0",
+  "description": "Trajectory desktop app with offline code execution",
+  "main": "main.js",
+  "author": "Naren <naren.kamal2020@gmail.com>",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build:web": "npm --prefix ../app run build && node scripts/copy-web.js",
+    "build:executor": "tsc -p tsconfig.executor.json",
+    "prepare-assets": "npm run build:executor && npm run build:web",
+    "start": "npm run prepare-assets && electron .",
+    "selftest": "npm run build:executor && electron . --selftest",
+    "dist": "npm run prepare-assets && electron-builder"
+  },
+  "build": {
+    "appId": "dev.launchlane.trajectory",
+    "productName": "Trajectory",
+    "files": [
+      "main.js",
+      "preload.js",
+      "build/icon.png",
+      "executor/**",
+      "web/**"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.education"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Education"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "typescript": "^5.9.3"
+  }
+}

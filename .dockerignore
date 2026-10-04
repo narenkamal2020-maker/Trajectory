@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.env
+**/logs
+desktop
+app/android
+ml/data
+ml/models
+stitch_trajectory_ai_career_platform
+images
+*.png
+.git

@@ -23,3 +23,14 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+# ML artifacts (regenerate with python ml/train.py; data contains pseudonymized user events)
+ml/data/
+ml/models/
+__pycache__/
+
+# Runtime logs
+logs/
+
+# Published app installers (built artifacts)
+backend/downloads/
+AppIcons.zip

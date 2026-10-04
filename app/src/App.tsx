@@ -1,189 +1,152 @@
-import { useState, useEffect } from 'react';
-import { DesktopLayout } from './components/navigation/DesktopLayout';
-import { CommandCenter } from './components/dashboard/CommandCenter';
-import { PracticeTerminalView } from './components/practice/PracticeTerminalView';
-import { MockInterviewStudio } from './components/interview/MockInterviewStudio';
-import { SkillConstellationView } from './components/constellation/SkillConstellationView';
-import { CareerFlightPathView } from './components/career/CareerFlightPathView';
-import { ResumeDiagnosticView } from './components/resume/ResumeDiagnosticView';
-import { ProgressAnalyticsView } from './components/analytics/ProgressAnalyticsView';
-import { WebSuite } from './components/web/WebSuite';
+import { lazy, Suspense, useEffect, type ReactElement } from 'react';
+import { AuthProvider, useAuth } from './lib/auth';
+import { ToastProvider } from './lib/toast';
+import { ThemeProvider } from './lib/theme';
+import { ConfirmProvider } from './components/extras';
+import { CookieBanner } from './components/CookieBanner';
+import { captureAttribution, trackPageView } from './lib/analytics';
 
-// Mobile Suite Components
-import { TelemetryDashboardScreen } from './components/mobile/TelemetryDashboard';
-import { CareerFlightPathScreen } from './components/mobile/CareerFlightPath';
-import { PracticeTerminalScreen } from './components/mobile/PracticeTerminal';
-import { InterviewView } from './components/InterviewView';
-import { SkillRadar } from './components/SkillRadar';
-import { ResumeView } from './components/ResumeView';
-import { PipelineView } from './components/PipelineView';
-import { MobileShell } from './components/mobile/MobileShell';
+captureAttribution();
+import { OfflineProvider } from './lib/offline-context';
+import { match, navigate, usePath } from './lib/router';
+import { AppShell } from './components/AppShell';
+import { Spinner } from './components/ui';
+import { AuthPage } from './pages/AuthPage';
+import { DashboardPage } from './pages/DashboardPage';
 
-import { api, type DashboardOverview } from './services/api';
-import type { ApplicationItem, UserSkillProficiency } from './types';
-import { Monitor } from 'lucide-react';
+// Heavier pages are code-split.
+const LandingPage = lazy(() => import('./pages/LandingPage').then((m) => ({ default: m.LandingPage })));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })));
+const PracticeListPage = lazy(() => import('./pages/PracticeListPage').then((m) => ({ default: m.PracticeListPage })));
+const PracticeWorkspacePage = lazy(() => import('./pages/PracticeWorkspacePage').then((m) => ({ default: m.PracticeWorkspacePage })));
+const InterviewsPage = lazy(() => import('./pages/InterviewsPage').then((m) => ({ default: m.InterviewsPage })));
+const InterviewSessionPage = lazy(() => import('./pages/InterviewSessionPage').then((m) => ({ default: m.InterviewSessionPage })));
+const SkillsPage = lazy(() => import('./pages/SkillsPage').then((m) => ({ default: m.SkillsPage })));
+const CareerPage = lazy(() => import('./pages/CareerPage').then((m) => ({ default: m.CareerPage })));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })));
+const ResumePage = lazy(() => import('./pages/ResumePage').then((m) => ({ default: m.ResumePage })));
+const ApplicationsPage = lazy(() => import('./pages/ApplicationsPage').then((m) => ({ default: m.ApplicationsPage })));
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })));
+const AdminUserPage = lazy(() => import('./pages/admin/AdminUserPage').then((m) => ({ default: m.AdminUserPage })));
+const AdminTopicsPage = lazy(() => import('./pages/admin/AdminTopicsPage').then((m) => ({ default: m.AdminTopicsPage })));
+const AdminQuestionsPage = lazy(() => import('./pages/admin/AdminQuestionsPage').then((m) => ({ default: m.AdminQuestionsPage })));
+const QuestionEditorPage = lazy(() => import('./pages/admin/QuestionEditorPage').then((m) => ({ default: m.QuestionEditorPage })));
+const AdminSecurityPage = lazy(() => import('./pages/admin/AdminSecurityPage').then((m) => ({ default: m.AdminSecurityPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 
-const INITIAL_SKILLS: UserSkillProficiency[] = [
-  { id: '1', name: 'Binary Trees & Graphs', category: 'DSA & Algorithms', proficiency: 88, attempts: 42, correct: 37 },
-  { id: '2', name: 'Dynamic Programming', category: 'DSA & Algorithms', proficiency: 72, attempts: 28, correct: 20 },
-  { id: '3', name: 'Distributed Caching', category: 'System Architecture', proficiency: 85, attempts: 15, correct: 13 },
-  { id: '4', name: 'SQL Index Optimization', category: 'SQL & Databases', proficiency: 94, attempts: 30, correct: 28 },
-  { id: '5', name: 'TCP/IP & WebSockets', category: 'Core CS & Networks', proficiency: 78, attempts: 18, correct: 14 },
-  { id: '6', name: 'STAR Behavioral Method', category: 'Behavioral & Comm', proficiency: 90, attempts: 12, correct: 11 },
-];
+const PrivacyPage = lazy(() => import('./pages/public/LegalPages').then((m) => ({ default: m.PrivacyPage })));
+const TermsPage = lazy(() => import('./pages/public/LegalPages').then((m) => ({ default: m.TermsPage })));
+const ContactPage = lazy(() => import('./pages/public/ContactPage').then((m) => ({ default: m.ContactPage })));
+const FaqPage = lazy(() => import('./pages/public/FaqPage').then((m) => ({ default: m.FaqPage })));
+const NotFoundPage = lazy(() => import('./pages/public/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
-const INITIAL_APPLICATIONS: ApplicationItem[] = [
-  { id: '1', company: 'Stripe', role: 'Staff Distributed Systems Engineer', stage: 'INTERVIEW', salaryPackage: '$240k + Equity', appliedDate: '2026-09-20' },
-  { id: '2', company: 'Google', role: 'L6 Systems Architect', stage: 'OA', salaryPackage: 'L6 Band', appliedDate: '2026-09-24' },
-  { id: '3', company: 'Datadog', role: 'Principal Storage Engineer', stage: 'APPLIED', salaryPackage: '$260k Base', appliedDate: '2026-09-28' },
-  { id: '4', company: 'Vercel', role: 'Platform Infrastructure Lead', stage: 'OFFER', salaryPackage: '$280k Total Comp', appliedDate: '2026-09-12' },
-];
+/** Entry pages for signed-out visitors (signed-in users are sent into the app). */
+const ENTRY = ['/', '/login', '/register'];
+/** Content pages anyone can read, signed in or not. */
+const OPEN: Record<string, () => ReactElement> = {
+  '/privacy': () => <PrivacyPage />,
+  '/terms': () => <TermsPage />,
+  '/contact': () => <ContactPage />,
+  '/faq': () => <FaqPage />,
+};
+const APP_ROUTES = ['/dashboard', '/practice', '/interviews', '/skills', '/career', '/analytics', '/resume', '/applications', '/settings', '/onboarding', '/admin'];
+const isAppRoute = (p: string) => APP_ROUTES.some((r) => p === r || p.startsWith(r + '/'));
 
-export function App() {
-  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
-  const [activeRoute, setActiveRoute] = useState<string>('dashboard');
-  const [mobileTab, setMobileTab] = useState<'orbit' | 'practice' | 'mocks' | 'skills' | 'career' | 'more'>('orbit');
-  
-  const [overview, setOverview] = useState<DashboardOverview | undefined>(undefined);
-  const [applications, setApplications] = useState<ApplicationItem[]>(INITIAL_APPLICATIONS);
+function AdminRoutes({ clean }: { clean: string }) {
+  let p: Record<string, string> | null;
+  if (clean === '/admin/questions/new') return <QuestionEditorPage />;
+  if ((p = match('/admin/questions/:id', clean))) return <QuestionEditorPage id={p.id} />;
+  if ((p = match('/admin/users/:id', clean))) return <AdminUserPage id={p.id} />;
+  if (clean === '/admin/questions') return <AdminQuestionsPage />;
+  if (clean === '/admin/topics') return <AdminTopicsPage />;
+  if (clean === '/admin/security') return <AdminSecurityPage />;
+  if (clean === '/admin') return <AdminUsersPage />;
+  return <NotFoundInApp />;
+}
+
+function NotFoundInApp() {
+  return (
+    <div className="text-center py-16">
+      <p className="font-mono text-sm text-[var(--color-text-muted)]">404</p>
+      <h1 className="font-headline text-2xl font-bold text-white mt-1">This page doesn&rsquo;t exist</h1>
+      <p className="text-sm text-[var(--color-text-secondary)] mt-2">Check the address, or head back to your dashboard.</p>
+      <a href="#/dashboard" className="inline-block mt-6 px-4 py-2 rounded-lg bg-[var(--color-primary)] text-[var(--color-on-primary)] font-bold">Go to dashboard</a>
+    </div>
+  );
+}
+
+function AuthedRoutes({ path, isAdmin }: { path: string; isAdmin: boolean }) {
+  const clean = path.split('?')[0];
+  if (clean === '/admin' || clean.startsWith('/admin/')) return isAdmin ? <AdminRoutes clean={clean} /> : <NotFoundInApp />;
+  let p: Record<string, string> | null;
+  if ((p = match('/practice/:id', clean))) return <PracticeWorkspacePage id={p.id} />;
+  if ((p = match('/interviews/:id', clean))) return <InterviewSessionPage id={p.id} />;
+  switch (clean) {
+    case '/dashboard': return <DashboardPage />;
+    case '/practice': return <PracticeListPage />;
+    case '/interviews': return <InterviewsPage />;
+    case '/skills': return <SkillsPage />;
+    case '/career': return <CareerPage />;
+    case '/analytics': return <AnalyticsPage />;
+    case '/resume': return <ResumePage />;
+    case '/applications': return <ApplicationsPage />;
+    case '/settings': return <SettingsPage />;
+    default: return <NotFoundInApp />;
+  }
+}
+
+function Router() {
+  const path = usePath();
+  const { status, requiresOnboarding, user } = useAuth();
+  const clean = path.split('?')[0];
+
+  useEffect(() => { trackPageView(); }, [clean]);
 
   useEffect(() => {
-    async function fetchOverview() {
-      const data = await api.getDashboardOverview();
-      setOverview(data);
-    }
-    fetchOverview();
-  }, []);
+    if (OPEN[clean]) return;
+    if (status === 'authenticated' && ENTRY.includes(clean)) navigate(user?.role === 'ADMIN' ? '/admin' : requiresOnboarding ? '/onboarding' : '/dashboard', true);
+    if (status === 'authenticated' && requiresOnboarding && user?.role !== 'ADMIN' && clean !== '/onboarding' && isAppRoute(clean)) navigate('/onboarding', true);
+    // Only real app pages require sign-in; unknown paths fall through to the 404 page.
+    if (status === 'anonymous' && isAppRoute(clean)) navigate('/login', true);
+  }, [status, clean, requiresOnboarding, user?.role]);
 
-  const handleNavigate = (route: string) => {
-    if (route === 'mobile') {
-      setViewMode('mobile');
-    } else {
-      setActiveRoute(route);
-    }
-  };
+  if (status === 'loading') return <div className="min-h-screen bg-[var(--color-bg-base)]"><Spinner label="Starting Trajectory…" /></div>;
 
-  // 1. DESKTOP COMMAND CENTER & SUITE
-  if (viewMode === 'desktop') {
-    return (
-      <DesktopLayout
-        activeRoute={activeRoute}
-        onNavigate={handleNavigate}
-        onSwitchToMobile={() => setViewMode('mobile')}
-      >
-        {activeRoute === 'dashboard' && (
-          <CommandCenter overview={overview} onNavigate={handleNavigate} />
-        )}
+  if (OPEN[clean]) return <Suspense fallback={<Spinner />}>{OPEN[clean]()}</Suspense>;
 
-        {activeRoute === 'practice' && (
-          <PracticeTerminalView />
-        )}
-
-        {activeRoute === 'interviews' && (
-          <MockInterviewStudio />
-        )}
-
-        {activeRoute === 'skills' && (
-          <SkillConstellationView onNavigate={handleNavigate} />
-        )}
-
-        {activeRoute === 'career' && (
-          <CareerFlightPathView onNavigate={handleNavigate} />
-        )}
-
-        {activeRoute === 'analytics' && (
-          <ProgressAnalyticsView
-            applications={applications}
-            onAddApplication={(newApp) => {
-              const item: ApplicationItem = { ...newApp, id: String(Date.now()) };
-              setApplications((prev) => [item, ...prev]);
-            }}
-            onUpdateStage={(id, stage) => {
-              setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, stage } : a)));
-            }}
-          />
-        )}
-
-        {activeRoute === 'resume' && (
-          <ResumeDiagnosticView />
-        )}
-
-        {activeRoute === 'landing' && (
-          <WebSuite onSwitchToMobile={() => setViewMode('mobile')} />
-        )}
-      </DesktopLayout>
-    );
+  if (status === 'anonymous') {
+    if (clean === '/login') return <AuthPage mode="login" />;
+    if (clean === '/register') return <AuthPage mode="register" />;
+    if (clean === '/') return <LandingPage />;
+    return <Suspense fallback={<Spinner />}>{isAppRoute(clean) ? <Spinner /> : <NotFoundPage />}</Suspense>;
   }
-
-  // 2. MOBILE COMPANION SUITE
+  if (clean === '/onboarding') return <OnboardingPage />;
+  if (!isAppRoute(clean) && !ENTRY.includes(clean)) return <Suspense fallback={<Spinner />}><NotFoundPage /></Suspense>;
   return (
-    <div className="min-h-screen bg-[#060812] flex flex-col items-center justify-center p-0 sm:p-4 relative selection:bg-[#ffd371] selection:text-[#3f2e00]">
-      {/* Floating Return to Desktop View Button */}
-      <div className="fixed top-3 right-3 sm:top-6 sm:right-6 z-50">
-        <button
-          type="button"
-          onClick={() => setViewMode('desktop')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#191b26]/90 hover:bg-[#272935] text-[#ffd371] border border-[#ffd371]/40 shadow-lg text-[11px] font-mono font-semibold transition-all cursor-pointer"
-        >
-          <Monitor className="w-3.5 h-3.5" />
-          <span>DESKTOP COMMAND CENTER</span>
-        </button>
-      </div>
+    <AppShell>
+      <Suspense fallback={<Spinner />}>
+        <AuthedRoutes path={path} isAdmin={user?.role === 'ADMIN'} />
+      </Suspense>
+    </AppShell>
+  );
+}
 
-      {mobileTab === 'orbit' && (
-        <TelemetryDashboardScreen onTabChange={(t) => setMobileTab(t)} />
-      )}
-
-      {mobileTab === 'career' && (
-        <CareerFlightPathScreen onTabChange={(t) => setMobileTab(t)} />
-      )}
-
-      {mobileTab === 'practice' && (
-        <PracticeTerminalScreen onTabChange={(t) => setMobileTab(t)} />
-      )}
-
-      {mobileTab === 'mocks' && (
-        <MobileShell activeTab="mocks" onTabChange={(t) => setMobileTab(t)}>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-[11px] font-mono text-white/50">
-              <span className="text-amber-400 font-bold">AI MOCK INTERVIEW STUDIO</span>
-              <span>VOICE SYNTHESIS LIVE</span>
-            </div>
-            <InterviewView />
-          </div>
-        </MobileShell>
-      )}
-
-      {mobileTab === 'skills' && (
-        <MobileShell activeTab="skills" onTabChange={(t) => setMobileTab(t)}>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-[11px] font-mono text-white/50">
-              <span className="text-amber-400 font-bold">SKILL RADAR TELEMETRY</span>
-              <span>L6 BENCHMARK</span>
-            </div>
-            <SkillRadar skills={INITIAL_SKILLS} />
-          </div>
-        </MobileShell>
-      )}
-
-      {mobileTab === 'more' && (
-        <MobileShell activeTab="more" onTabChange={(t) => setMobileTab(t)}>
-          <div className="space-y-4">
-            <ResumeView atsScore={88} targetRole="Staff Distributed Systems Architect" />
-            <PipelineView
-              applications={applications}
-              onAddApplication={(newApp) => {
-                const item: ApplicationItem = { ...newApp, id: String(Date.now()) };
-                setApplications((prev) => [item, ...prev]);
-              }}
-              onUpdateStage={(id, stage) => {
-                setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, stage } : a)));
-              }}
-            />
-          </div>
-        </MobileShell>
-      )}
-    </div>
+export function App() {
+  return (
+    <ThemeProvider>
+    <ToastProvider>
+    <ConfirmProvider>
+      <AuthProvider>
+        <OfflineProvider>
+          <Suspense fallback={<div className="min-h-screen bg-[var(--color-bg-base)]" />}>
+            <Router />
+            <CookieBanner />
+          </Suspense>
+        </OfflineProvider>
+      </AuthProvider>
+    </ConfirmProvider>
+    </ToastProvider>
+    </ThemeProvider>
   );
 }
 

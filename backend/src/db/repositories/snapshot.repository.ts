@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { query, execute } from '../oracle';
+import { query, execute } from '../../config/oracle';
 
 export interface ProgressSnapshot {
   SNAPSHOT_ID: string;

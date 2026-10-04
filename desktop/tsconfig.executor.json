@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "outDir": "./executor",
+    "rootDir": "../backend/src/engine/executor",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": ["node"],
+    "typeRoots": ["../backend/node_modules/@types"]
+  },
+  "files": [
+    "../backend/src/engine/executor/runner.ts",
+    "../backend/src/engine/executor/harness.ts",
+    "../backend/src/engine/executor/compare.ts",
+    "../backend/src/engine/executor/types.ts"
+  ]
+}

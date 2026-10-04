@@ -2,51 +2,51 @@ import oracledb from 'oracledb';
 import { env } from './env';
 import { logger } from './logger';
 
-// Use thin mode — no Oracle Client installation required
-oracledb.initOracleClient = undefined as any;
+// node-oracledb 6+ runs in "thin" mode by default — no Oracle Instant Client needed.
+oracledb.autoCommit = false;
+oracledb.fetchAsString = [oracledb.CLOB];
+oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
 
 let pool: oracledb.Pool | null = null;
 
 export async function initOraclePool(): Promise<void> {
-  try {
-    oracledb.autoCommit = false;
-    oracledb.fetchAsString = [oracledb.CLOB];
+  if (pool) return;
+  pool = await oracledb.createPool({
+    user: env.ORACLE_USER,
+    password: env.ORACLE_PASSWORD,
+    connectString: env.ORACLE_CONNECTION_STRING,
+    poolMin: 1,
+    poolMax: 10,
+    poolIncrement: 1,
+    poolTimeout: 60,
+    // Runtime user without ownership: resolve unqualified table names in the owner's schema.
+    ...(env.ORACLE_SCHEMA ? {
+      sessionCallback: (conn: oracledb.Connection, _tag: string, cb: (err?: Error) => void) => {
+        conn.execute(`ALTER SESSION SET CURRENT_SCHEMA = ${env.ORACLE_SCHEMA}`).then(() => cb(), cb);
+      },
+    } : {}),
+  });
+  logger.info('Oracle DB pool initialized');
+}
 
-    pool = await oracledb.createPool({
-      user: env.ORACLE_USER,
-      password: env.ORACLE_PASSWORD,
-      connectString: env.ORACLE_CONNECTION_STRING,
-      poolMin: 2,
-      poolMax: 10,
-      poolIncrement: 1,
-      poolTimeout: 60,
-    });
-
-    logger.info('Oracle DB pool initialized successfully');
-  } catch (err: any) {
-    logger.error('Failed to initialize Oracle pool:', err.message);
-    throw err;
-  }
+export function isPoolReady(): boolean {
+  return pool !== null;
 }
 
 export async function getConnection(): Promise<oracledb.Connection> {
-  if (!pool) {
-    throw new Error('Oracle pool not initialized. Call initOraclePool() first.');
-  }
+  if (!pool) throw new Error('Oracle pool not initialized. Call initOraclePool() first.');
   return pool.getConnection();
 }
 
 export async function closePool(): Promise<void> {
   if (pool) {
-    await pool.close(0);
+    await pool.close(5);
     pool = null;
     logger.info('Oracle pool closed');
   }
 }
 
-/**
- * Execute a single query and release the connection.
- */
+/** Execute a read query and release the connection. */
 export async function query<T = any>(
   sql: string,
   binds: oracledb.BindParameters = [],
@@ -54,28 +54,25 @@ export async function query<T = any>(
 ): Promise<oracledb.Result<T>> {
   const conn = await getConnection();
   try {
-    const result = await conn.execute<T>(sql, binds, {
-      outFormat: oracledb.OUT_FORMAT_OBJECT,
-      ...options,
-    });
-    return result;
+    return await conn.execute<T>(sql, binds, { outFormat: oracledb.OUT_FORMAT_OBJECT, ...options });
   } finally {
     await conn.close();
   }
 }
 
-/**
- * Execute a write (INSERT/UPDATE/DELETE) and commit.
- */
+/** Execute a single write (INSERT/UPDATE/DELETE/MERGE) and commit. */
 export async function execute(
   sql: string,
   binds: oracledb.BindParameters = []
 ): Promise<oracledb.Result<unknown>> {
+  return withTransaction((conn) => conn.execute(sql, binds));
+}
+
+/** Run several statements atomically on one connection. */
+export async function withTransaction<T>(fn: (conn: oracledb.Connection) => Promise<T>): Promise<T> {
   const conn = await getConnection();
   try {
-    const result = await conn.execute(sql, binds, {
-      outFormat: oracledb.OUT_FORMAT_OBJECT,
-    });
+    const result = await fn(conn);
     await conn.commit();
     return result;
   } catch (err) {
@@ -86,24 +83,11 @@ export async function execute(
   }
 }
 
-/**
- * Execute multiple statements in a single transaction.
- */
+/** Backwards-compatible helper used by older repositories. */
 export async function transaction(
   operations: Array<{ sql: string; binds?: oracledb.BindParameters }>
 ): Promise<void> {
-  const conn = await getConnection();
-  try {
-    for (const op of operations) {
-      await conn.execute(op.sql, op.binds ?? [], {
-        outFormat: oracledb.OUT_FORMAT_OBJECT,
-      });
-    }
-    await conn.commit();
-  } catch (err) {
-    await conn.rollback();
-    throw err;
-  } finally {
-    await conn.close();
-  }
+  await withTransaction(async (conn) => {
+    for (const op of operations) await conn.execute(op.sql, op.binds ?? []);
+  });
 }

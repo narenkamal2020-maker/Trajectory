@@ -1,0 +1,30 @@
+/* Print: clean black-on-white pages (resume report, interview report, analytics, legal pages). */
+@media print {
+  @page { margin: 16mm; }
+  :root {
+    --color-bg-base: #fff; --color-surface: #fff; --color-surface-card: #fff;
+    --color-surface-container-low: #fff; --color-surface-container: #fff; --color-surface-container-high: #fff;
+    --color-text-primary: #000; --color-text-secondary: #222; --color-text-muted: #555;
+    --color-primary: #000; --chart-grid: #ccc; --chart-axis: #444;
+  }
+  html, body { background: #fff !important; color: #000 !important; }
+  *, *::before, *::after { box-shadow: none !important; text-shadow: none !important; backdrop-filter: none !important; }
+  .text-white, [class*='text-white'] { color: #000 !important; }
+  [class*='border-white'] { border-color: #ccc !important; }
+
+  /* Chrome: navigation, floating widgets, interactive controls */
+  header.fixed, aside, nav[aria-label='Primary'], nav[aria-label='Mobile'], nav[aria-label='Admin sections'],
+  button, [role='tablist'], .print\:hidden, video, canvas { display: none !important; }
+  main, #main { padding: 0 !important; margin: 0 !important; }
+  .md\:pl-60 { padding-left: 0 !important; }
+  .pt-14 { padding-top: 0 !important; }
+
+  section, article, li, tr, figure, .rounded-2xl { break-inside: avoid; }
+  h1, h2, h3 { break-after: avoid; }
+  a[href^='http']::after, a[href^='mailto:']::after { content: ' (' attr(href) ')'; font-size: 0.85em; color: #555; }
+
+  /* The cinematic landing page prints as plain text on white */
+  .landing { background: #fff !important; color: #000 !important; }
+  .landing .liquid-glass, .landing .liquid-glass-strong { border: 1px solid #ccc; }
+  .landing .liquid-glass::before, .landing .liquid-glass-strong::before { display: none; }
+}

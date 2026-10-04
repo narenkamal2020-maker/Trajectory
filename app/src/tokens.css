@@ -52,6 +52,10 @@
   --color-cyan: #00e5ff;
   --color-indigo: #1e293b;
 
+  /* Theme toggle */
+  --toggle-bg: #191b26;
+  --toggle-fg: #ffd371;
+
   /* 8px Spacing Grid Baseline */
   --spacing-1: 0.25rem;  /* 4px */
   --spacing-2: 0.5rem;   /* 8px */

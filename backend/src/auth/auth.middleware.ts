@@ -1,20 +1,16 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { env } from '../config/env';
+import type { Request, Response, NextFunction } from 'express';
+import { verifyAccessToken } from './auth.service';
+import type { AuthedRequest } from '../lib/http';
 
-export interface AuthRequest extends Request {
-  user?: { id: string; email: string };
-}
-
-export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) return res.status(401).json({ error: 'Access token required' });
-
-  jwt.verify(token, env.JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(403).json({ error: 'Invalid or expired access token' });
-    req.user = decoded as { id: string; email: string };
+/** Require a valid Bearer access token. Responds 401 so clients know to refresh. */
+export function authenticate(req: Request, res: Response, next: NextFunction) {
+  const header = req.headers.authorization;
+  const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
+  if (!token) return res.status(401).json({ statusCode: 401, message: 'Access token required' });
+  try {
+    (req as AuthedRequest).user = verifyAccessToken(token);
     next();
-  });
-};
+  } catch {
+    res.status(401).json({ statusCode: 401, message: 'Invalid or expired access token', code: 'TOKEN_EXPIRED' });
+  }
+}

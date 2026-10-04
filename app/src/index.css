@@ -1,5 +1,13 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./styles/light.css";
+@import "./styles/print.css";
+
+/* Landing page typography (Tailwind v4 theme tokens → font-heading / font-barlow utilities) */
+@theme {
+  --font-heading: 'Instrument Serif', serif;
+  --font-barlow: 'Barlow', sans-serif;
+}
 
 /* Reset & Global Base */
 html, body {

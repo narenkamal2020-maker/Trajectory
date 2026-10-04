@@ -1,0 +1,75 @@
+/*
+ * Light theme. The app is designed dark-first; light mode redefines the design tokens and remaps
+ * the handful of hard-coded "white on dark" utilities. The cinematic landing page (.landing)
+ * intentionally stays dark, so every remap excludes it with :not(.landing, .landing *).
+ * Unlayered on purpose: it must override Tailwind's layered utilities.
+ */
+:root[data-theme='light'] {
+  --color-bg-base: #f6f5f1;
+  --color-surface: #ffffff;
+  --color-surface-dim: #f0eee8;
+  --color-surface-bright: #ffffff;
+  --color-surface-container-lowest: #faf9f6;
+  --color-surface-container-low: #f0eee8;
+  --color-surface-container: #ebe8e0;
+  --color-surface-container-high: #e4e0d6;
+  --color-surface-container-highest: #d9d4c7;
+  --color-surface-card: rgba(255, 255, 255, 0.9);
+
+  --color-primary: #8a6200;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #a37400;
+  --color-gold: #a37400;
+  --color-gold-light: #8a6200;
+  --color-gold-glow: rgba(138, 98, 0, 0.18);
+  --color-gold-border: rgba(138, 98, 0, 0.35);
+  --color-secondary: #9a4d00;
+
+  --color-on-surface: #1b1c22;
+  --color-text-primary: #1b1c22;
+  --color-text-secondary: #4a4436;
+  --color-text-muted: #6b6252;
+  --color-outline: #6b6252;
+  --color-outline-variant: #cfc7b5;
+
+  --toggle-bg: #ffffff;
+  --toggle-fg: #8a6200;
+
+  --chart-grid: rgba(0, 0, 0, 0.08);
+  --chart-accent: #a37400;
+  --chart-empty: rgba(0, 0, 0, 0.07);
+  --chart-axis: #6b6252;
+  --chart-tooltip-bg: rgba(255, 255, 255, 0.97);
+  --chart-tooltip-fg: #1b1c22;
+}
+
+:root[data-theme='light'] body { background: var(--color-bg-base); color: var(--color-text-primary); }
+
+/* Text */
+:root[data-theme='light'] :is(.text-white, .text-\[\#e1e1f1\]):not(.landing, .landing *) { color: var(--color-text-primary); }
+:root[data-theme='light'] :is(.text-white\/90, .text-white\/80):not(.landing, .landing *) { color: var(--color-text-secondary); }
+:root[data-theme='light'] .text-white\/20:not(.landing, .landing *) { color: rgba(0, 0, 0, 0.25); }
+:root[data-theme='light'] :is(.hover\:text-white:hover, .group:hover .group-hover\:text-white):not(.landing, .landing *) { color: var(--color-text-primary); }
+:root[data-theme='light'] .placeholder\:text-white\/30::placeholder { color: rgba(0, 0, 0, 0.38); }
+
+/* Borders & dividers */
+:root[data-theme='light'] :is(.border-white\/10, .border-white\/15, .border-white\/20):not(.landing, .landing *) { border-color: rgba(0, 0, 0, 0.1); }
+:root[data-theme='light'] .border-white\/5:not(.landing, .landing *) { border-color: rgba(0, 0, 0, 0.06); }
+:root[data-theme='light'] :is(.hover\:border-white\/30:hover, .hover\:border-white\/40:hover):not(.landing, .landing *) { border-color: rgba(0, 0, 0, 0.3); }
+:root[data-theme='light'] .divide-white\/5:not(.landing, .landing *) > * + * { border-color: rgba(0, 0, 0, 0.07); }
+
+/* Tinted surfaces */
+:root[data-theme='light'] :is(.bg-white\/5, .bg-white\/\[0\.05\]):not(.landing, .landing *) { background-color: rgba(0, 0, 0, 0.04); }
+:root[data-theme='light'] :is(.bg-white\/10, .bg-white\/\[0\.08\]):not(.landing, .landing *) { background-color: rgba(0, 0, 0, 0.07); }
+:root[data-theme='light'] :is(.hover\:bg-white\/5:hover, .hover\:bg-white\/10:hover, .hover\:bg-white\/\[0\.02\]:hover, .hover\:bg-white\/\[0\.03\]:hover):not(.landing, .landing *) { background-color: rgba(0, 0, 0, 0.04); }
+:root[data-theme='light'] .bg-\[\#11131d\]:not(.landing, .landing *) { background-color: #ffffff; }
+
+/* Status colours: darker shades for contrast on light backgrounds */
+:root[data-theme='light'] :is(.text-emerald-100, .text-emerald-200, .text-emerald-300, .text-emerald-400):not(.landing, .landing *) { color: #047857; }
+:root[data-theme='light'] :is(.text-rose-100, .text-rose-200, .text-rose-300):not(.landing, .landing *) { color: #b91c1c; }
+:root[data-theme='light'] .text-sky-300:not(.landing, .landing *) { color: #0369a1; }
+
+/* Native form controls & scrollbars */
+:root[data-theme='light'] ::-webkit-scrollbar-track { background: #ebe8e0; }
+:root[data-theme='light'] ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); }
+:root[data-theme='light'] option { background: #ffffff; color: #1b1c22; }
