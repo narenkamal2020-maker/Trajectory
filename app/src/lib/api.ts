@@ -160,7 +160,7 @@ class ApiClient {
   // ── App downloads (public) ──
   downloads() { return this.request<T.DownloadItem[]>('/downloads'); }
   /** Absolute URL for a download, valid in the browser and in the native shells. */
-  downloadUrl(item: T.DownloadItem) { return this.base.replace(/\/api$/, '') + item.url; }
+  downloadUrl(item: T.DownloadItem) { return /^https:\/\//.test(item.url) ? item.url : this.base.replace(/\/api$/, '') + item.url; }
 
   health() { return this.request<{ status: string; time: string }>('/health'); }
   /** Admin-only engine details (database / ML service / LLM provider). */

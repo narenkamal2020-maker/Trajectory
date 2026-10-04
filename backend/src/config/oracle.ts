@@ -15,6 +15,12 @@ export async function initOraclePool(): Promise<void> {
     user: env.ORACLE_USER,
     password: env.ORACLE_PASSWORD,
     connectString: env.ORACLE_CONNECTION_STRING,
+    // Autonomous Database (mTLS): thin mode reads ewallet.pem and tnsnames.ora from this folder.
+    ...(env.ORACLE_WALLET_DIR ? {
+      configDir: env.ORACLE_WALLET_DIR,
+      walletLocation: env.ORACLE_WALLET_DIR,
+      walletPassword: env.ORACLE_WALLET_PASSWORD,
+    } : {}),
     poolMin: 1,
     poolMax: 10,
     poolIncrement: 1,

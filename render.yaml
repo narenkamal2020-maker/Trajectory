@@ -1,0 +1,64 @@
+# Render Blueprint — see docs/deploy-render.md for the full walkthrough.
+# Render has no Oracle hosting, so the database is an Oracle Autonomous Database (Always Free)
+# reached over TLS. Values marked `sync: false` are asked for when you create the Blueprint.
+services:
+  - type: web
+    name: trajectory
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free            # free instances sleep after 15 min idle; use "starter" to keep it always on
+    region: singapore     # pick the region closest to your users and your Oracle database
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # ── Oracle Autonomous Database ──
+      - key: ORACLE_USER
+        value: trajectory
+      - key: ORACLE_PASSWORD
+        sync: false
+      - key: ORACLE_CONNECTION_STRING   # e.g. trajectorydb_high (with a wallet) or the full TLS descriptor
+        sync: false
+      - key: ORACLE_WALLET_DIR          # /etc/secrets when the wallet files are uploaded as Secret Files
+        sync: false
+      - key: ORACLE_WALLET_PASSWORD
+        sync: false
+
+      # ── Secrets ──
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: DATA_ENCRYPTION_KEY        # 64 hex chars; keep a copy outside Render
+        sync: false
+
+      # ── App ──
+      - key: FRONTEND_URL               # https://<your-service>.onrender.com or your custom domain
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SEED_ON_BOOT
+        value: if-empty
+      - key: DOWNLOAD_URLS              # comma-separated GitHub Release links to the APK / .exe
+        sync: false
+      - key: LLM_PROVIDER
+        value: none                     # set to "openai" and add OPENAI_API_KEY for AI interview scoring
+      - key: EXEC_MAX_CONCURRENCY
+        value: "2"                      # the free instance has 512 MB of memory
+
+  # Optional ML service (paid "starter" private service). Without it the API uses its rule-based
+  # recommendations. To enable: uncomment, and add to the web service's envVars:
+  #   - key: ML_SERVICE_URL
+  #     fromService: { type: pserv, name: trajectory-ml, property: hostport }
+  # - type: pserv
+  #   name: trajectory-ml
+  #   runtime: docker
+  #   dockerfilePath: ./ml/Dockerfile
+  #   dockerContext: ./ml
+  #   plan: starter
+  #   region: singapore
+  #   envVars:
+  #     - key: ML_HOST
+  #       value: 0.0.0.0

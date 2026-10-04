@@ -17,7 +17,7 @@ function detectDevice(): Device {
   return 'other';
 }
 
-const mb = (b: number) => `${(b / 1048576).toFixed(1)} MB`;
+const mb = (b: number) => (b > 0 ? `${(b / 1048576).toFixed(1)} MB` : '');
 const DESKTOP_LABEL = { windows: 'Windows (.exe)', mac: 'macOS (.dmg)', linux: 'Linux (.AppImage)' } as const;
 
 function DownloadButton({ item, primary }: { item: DownloadItem; primary: boolean }) {

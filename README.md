@@ -106,7 +106,8 @@ cd ml && python -m unittest discover -s tests
 ## Deployment
 
 `docker compose up --build` runs Oracle XE, the API (serving the web app) and the ML service — copy
-`.env.example` to `.env` first. The root `Dockerfile` produces a single API+web image; set
+`.env.example` to `.env` first. To host on **Render** (with a free Oracle Autonomous Database), follow
+[docs/deploy-render.md](docs/deploy-render.md) — the `render.yaml` Blueprint sets up the service. The root `Dockerfile` produces a single API+web image; set
 `STATIC_DIR` to serve the web build from the API in other environments. CI is in
 `.github/workflows/ci.yml` (typecheck, all test suites against an Oracle service container, image builds).
 

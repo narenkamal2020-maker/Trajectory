@@ -42,3 +42,18 @@ describe('app downloads', () => {
     expect((await request(app).get('/api/downloads/%2e%2e%5c.env')).status).toBe(404);
   });
 });
+
+describe('external downloads (DOWNLOAD_URLS)', () => {
+  it('lists https installer links and ignores everything else', async () => {
+    const { externalDownloads } = await import('../../src/downloads');
+    const items = externalDownloads([
+      'https://github.com/o/r/releases/download/v1.0/trajectory-android-1.0.apk',
+      'https://github.com/o/r/releases/download/v1.0/trajectory-desktop-windows-1.0.0.exe',
+      'http://insecure.example/app.apk',
+      'https://example.com/readme.txt',
+      'not a url',
+    ].join(','));
+    expect(items.map((i) => [i.platform, i.version])).toEqual([['android', '1.0'], ['windows', '1.0.0']]);
+    expect(items[0].url).toMatch(/^https:\/\/github\.com\//);
+  });
+});
