@@ -2,7 +2,7 @@
 # Python is included because the code executor runs Python and SQL (SQLite) submissions.
 
 # ── Build the web app ──
-FROM node:22-bookworm-slim AS web
+FROM node:26-bookworm-slim AS web
 WORKDIR /src/app
 COPY app/package*.json ./
 RUN npm ci
@@ -10,7 +10,7 @@ COPY app/ ./
 RUN npm run build
 
 # ── Build the API ──
-FROM node:22-bookworm-slim AS api
+FROM node:26-bookworm-slim AS api
 WORKDIR /src/backend
 COPY backend/package*.json ./
 RUN npm ci
@@ -18,7 +18,7 @@ COPY backend/ ./
 RUN npm run build && npm prune --omit=dev
 
 # ── Runtime ──
-FROM node:22-bookworm-slim
+FROM node:26-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends python3 tini \
   && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production PORT=3001 PYTHON_BIN=python3 STATIC_DIR=/app/web
