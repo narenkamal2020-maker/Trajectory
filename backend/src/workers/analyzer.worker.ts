@@ -53,7 +53,7 @@ export const analysisWorker = new Worker(
     let resumeRecord: any = null;
 
     try {
-      job.progress(10);
+      await job.updateProgress(10);
 
       const [profile, resume] = await Promise.all([
         prisma.userProfile.findUnique({ where: { user_id: userId } }),
@@ -62,7 +62,7 @@ export const analysisWorker = new Worker(
           : prisma.resume.findFirst({ where: { user_id: userId }, orderBy: { created_at: 'desc' } })
       ]);
 
-      job.progress(20);
+      await job.updateProgress(20);
 
       if (!profile) {
         throw new UnrecoverableError('User profile not found');
@@ -74,19 +74,19 @@ export const analysisWorker = new Worker(
       }
 
       resumeRecord = resume;
-      const rawText = resume.parsed_text || resume.parsed_json_data?.text || '';
+      const rawText = resume.parsed_text || (resume.parsed_json_data as any)?.text || '';
 
       if (!rawText || rawText.trim().length === 0) {
         throw new Error('Resume text is empty or not available for analysis');
       }
 
-      job.progress(30);
+      await job.updateProgress(30);
       logger.debug(`[Worker-${job.id}] Calling LLM for analysis (text length: ${rawText.length})`);
 
       const rawLlmOutput = await callLLMForResumeAnalysis(profile, rawText);
       const llmOutput = LLMOutputSchema.parse(rawLlmOutput);
 
-      job.progress(60);
+      await job.updateProgress(60);
 
       await prisma.resume.update({
         where: { id: resume.id },
@@ -105,7 +105,7 @@ export const analysisWorker = new Worker(
         }
       });
 
-      job.progress(80);
+      await job.updateProgress(80);
 
       await CacheService.invalidateResumeAnalysis(userId);
 
@@ -115,7 +115,7 @@ export const analysisWorker = new Worker(
         { atsScore: llmOutput.atsScore }
       );
 
-      job.progress(100);
+      await job.updateProgress(100);
 
       return {
         success: true,
@@ -168,11 +168,8 @@ export const analysisWorker = new Worker(
       maxRetriesPerRequest: 3,
       enableReadyCheck: false
     },
-    settings: {
-      retryProcessDelay: 1000,
-      lockDuration: 30000,
-      lockRenewTime: 15000
-    }
+    lockDuration: 30000,
+    lockRenewTime: 15000
   }
 );
 

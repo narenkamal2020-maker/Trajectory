@@ -35,7 +35,7 @@ export const getOnboardingProgress = async (userId: string): Promise<OnboardingP
 
   const profileComplete = profile && profile.target_role && profile.target_industry && profile.experience_level && profile.skills?.length > 0;
   const resumeUploaded = Boolean(latestResume);
-  const isComplete = profileComplete && resumeUploaded && latestResume?.ats_score !== null;
+  const isComplete = Boolean(profileComplete && resumeUploaded && latestResume?.ats_score !== null);
 
   let resumeAnalysisStatus: 'pending' | 'processing' | 'completed' | 'failed' = 'pending';
   if (latestResume) {

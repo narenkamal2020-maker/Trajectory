@@ -1,0 +1,381 @@
+-- =============================================================================
+-- TRAJECTORY — Oracle SQL Schema v1.0
+-- Run this script as the trajectory user after creating the schema
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- USERS
+-- -----------------------------------------------------------------------------
+CREATE TABLE TRAJECTORY_USERS (
+    USER_ID        VARCHAR2(36)  PRIMARY KEY,
+    EMAIL          VARCHAR2(255) UNIQUE NOT NULL,
+    PASSWORD_HASH  VARCHAR2(255) NOT NULL,
+    FULL_NAME      VARCHAR2(100) NOT NULL,
+    AVATAR_URL     VARCHAR2(500),
+    IS_ACTIVE      NUMBER(1)     DEFAULT 1 NOT NULL CHECK (IS_ACTIVE IN (0,1)),
+    CREATED_AT     TIMESTAMP     DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    UPDATED_AT     TIMESTAMP     DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+-- -----------------------------------------------------------------------------
+-- PROFILES
+-- -----------------------------------------------------------------------------
+CREATE TABLE PROFILES (
+    PROFILE_ID        VARCHAR2(36)  PRIMARY KEY,
+    USER_ID           VARCHAR2(36)  UNIQUE NOT NULL,
+    TARGET_ROLE       VARCHAR2(100),
+    EXPERIENCE_LEVEL  VARCHAR2(50),
+    TARGET_INDUSTRY   VARCHAR2(100),
+    BIO               CLOB,
+    GITHUB_URL        VARCHAR2(500),
+    LINKEDIN_URL      VARCHAR2(500),
+    ONBOARDING_DONE   NUMBER(1)     DEFAULT 0 NOT NULL CHECK (ONBOARDING_DONE IN (0,1)),
+    CREATED_AT        TIMESTAMP     DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    UPDATED_AT        TIMESTAMP     DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_PROFILES_USER FOREIGN KEY (USER_ID)
+        REFERENCES TRAJECTORY_USERS(USER_ID) ON DELETE CASCADE
+);
+
+-- -----------------------------------------------------------------------------
+-- SKILL CATEGORIES (DSA, SQL, OOP, Networks, etc.)
+-- -----------------------------------------------------------------------------
+CREATE TABLE SKILL_CATEGORIES (
+    CATEGORY_ID   VARCHAR2(36)  PRIMARY KEY,
+    NAME          VARCHAR2(100) UNIQUE NOT NULL,
+    PARENT_ID     VARCHAR2(36),
+    ICON          VARCHAR2(100),
+    DISPLAY_ORDER NUMBER(4)     DEFAULT 0,
+    CONSTRAINT FK_CAT_PARENT FOREIGN KEY (PARENT_ID)
+        REFERENCES SKILL_CATEGORIES(CATEGORY_ID)
+);
+
+-- -----------------------------------------------------------------------------
+-- SKILLS (Arrays, BFS, DFS, SQL Joins, etc.)
+-- -----------------------------------------------------------------------------
+CREATE TABLE SKILLS (
+    SKILL_ID      VARCHAR2(36)  PRIMARY KEY,
+    CATEGORY_ID   VARCHAR2(36)  NOT NULL,
+    NAME          VARCHAR2(100) NOT NULL,
+    DESCRIPTION   VARCHAR2(500),
+    CREATED_AT    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_SKILLS_CATEGORY FOREIGN KEY (CATEGORY_ID)
+        REFERENCES SKILL_CATEGORIES(CATEGORY_ID),
+    CONSTRAINT UQ_SKILL_NAME_CAT UNIQUE (CATEGORY_ID, NAME)
+);
+
+-- -----------------------------------------------------------------------------
+-- USER_SKILLS (proficiency per user per skill)
+-- -----------------------------------------------------------------------------
+CREATE TABLE USER_SKILLS (
+    USER_SKILL_ID   VARCHAR2(36)   PRIMARY KEY,
+    USER_ID         VARCHAR2(36)   NOT NULL,
+    SKILL_ID        VARCHAR2(36)   NOT NULL,
+    PROFICIENCY     NUMBER(5,2)    DEFAULT 0 NOT NULL,
+    ATTEMPTS        NUMBER(6)      DEFAULT 0 NOT NULL,
+    CORRECT         NUMBER(6)      DEFAULT 0 NOT NULL,
+    LAST_PRACTICED  TIMESTAMP,
+    CREATED_AT      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    UPDATED_AT      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_US_USER FOREIGN KEY (USER_ID)
+        REFERENCES TRAJECTORY_USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT FK_US_SKILL FOREIGN KEY (SKILL_ID)
+        REFERENCES SKILLS(SKILL_ID),
+    CONSTRAINT UQ_USER_SKILL UNIQUE (USER_ID, SKILL_ID),
+    CONSTRAINT CHK_PROFICIENCY CHECK (PROFICIENCY >= 0 AND PROFICIENCY <= 100)
+);
+
+-- -----------------------------------------------------------------------------
+-- QUESTIONS
+-- -----------------------------------------------------------------------------
+CREATE TABLE QUESTIONS (
+    QUESTION_ID    VARCHAR2(36)   PRIMARY KEY,
+    TITLE          VARCHAR2(500)  NOT NULL,
+    DESCRIPTION    CLOB           NOT NULL,
+    DIFFICULTY     VARCHAR2(10)   NOT NULL,
+    CATEGORY_ID    VARCHAR2(36)   NOT NULL,
+    TAGS           VARCHAR2(500),
+    CONSTRAINTS_TXT CLOB,
+    EXAMPLES       CLOB,
+    HINTS          CLOB,
+    EDITORIAL      CLOB,
+    TIME_LIMIT_MS  NUMBER(8)      DEFAULT 2000 NOT NULL,
+    MEMORY_MB      NUMBER(6)      DEFAULT 256 NOT NULL,
+    SOLVE_RATE     NUMBER(5,2),
+    AVG_TIME_SEC   NUMBER(8,2),
+    TOTAL_ATTEMPTS NUMBER(10)     DEFAULT 0 NOT NULL,
+    IS_ACTIVE      NUMBER(1)      DEFAULT 1 NOT NULL CHECK (IS_ACTIVE IN (0,1)),
+    CREATED_AT     TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_Q_CATEGORY FOREIGN KEY (CATEGORY_ID)
+        REFERENCES SKILL_CATEGORIES(CATEGORY_ID),
+    CONSTRAINT CHK_DIFFICULTY CHECK (DIFFICULTY IN ('EASY','MEDIUM','HARD'))
+);
+
+-- -----------------------------------------------------------------------------
+-- QUESTION_SKILLS (many-to-many)
+-- -----------------------------------------------------------------------------
+CREATE TABLE QUESTION_SKILLS (
+    QUESTION_ID   VARCHAR2(36)  NOT NULL,
+    SKILL_ID      VARCHAR2(36)  NOT NULL,
+    WEIGHT        NUMBER(3,2)   DEFAULT 1.0 NOT NULL,
+    PRIMARY KEY (QUESTION_ID, SKILL_ID),
+    CONSTRAINT FK_QS_QUESTION FOREIGN KEY (QUESTION_ID)
+        REFERENCES QUESTIONS(QUESTION_ID) ON DELETE CASCADE,
+    CONSTRAINT FK_QS_SKILL FOREIGN KEY (SKILL_ID)
+        REFERENCES SKILLS(SKILL_ID)
+);
+
+-- -----------------------------------------------------------------------------
+-- TEST_CASES
+-- -----------------------------------------------------------------------------
+CREATE TABLE TEST_CASES (
+    TEST_CASE_ID  VARCHAR2(36)  PRIMARY KEY,
+    QUESTION_ID   VARCHAR2(36)  NOT NULL,
+    INPUT_DATA    CLOB,
+    EXPECTED_OUT  CLOB,
+    IS_HIDDEN     NUMBER(1)     DEFAULT 0 NOT NULL CHECK (IS_HIDDEN IN (0,1)),
+    DISPLAY_ORDER NUMBER(4)     DEFAULT 0,
+    CONSTRAINT FK_TC_QUESTION FOREIGN KEY (QUESTION_ID)
+        REFERENCES QUESTIONS(QUESTION_ID) ON DELETE CASCADE
+);
+
+-- -----------------------------------------------------------------------------
+-- PRACTICE_SESSIONS
+-- -----------------------------------------------------------------------------
+CREATE TABLE PRACTICE_SESSIONS (
+    SESSION_ID    VARCHAR2(36)  PRIMARY KEY,
+    USER_ID       VARCHAR2(36)  NOT NULL,
+    STARTED_AT    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    ENDED_AT      TIMESTAMP,
+    SESSION_TYPE  VARCHAR2(50)  DEFAULT 'PRACTICE' NOT NULL,
+    CONSTRAINT FK_PS_USER FOREIGN KEY (USER_ID)
+        REFERENCES TRAJECTORY_USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT CHK_SESSION_TYPE CHECK (SESSION_TYPE IN ('PRACTICE','TIMED','INTERVIEW','REVIEW'))
+);
+
+-- -----------------------------------------------------------------------------
+-- SUBMISSIONS
+-- -----------------------------------------------------------------------------
+CREATE TABLE SUBMISSIONS (
+    SUBMISSION_ID   VARCHAR2(36)   PRIMARY KEY,
+    USER_ID         VARCHAR2(36)   NOT NULL,
+    QUESTION_ID     VARCHAR2(36)   NOT NULL,
+    SESSION_ID      VARCHAR2(36),
+    CODE            CLOB,
+    LANGUAGE        VARCHAR2(50),
+    STATUS          VARCHAR2(20)   DEFAULT 'PENDING' NOT NULL,
+    SCORE           NUMBER(5,2),
+    TIME_TAKEN_SEC  NUMBER(8,2),
+    TESTS_PASSED    NUMBER(6)      DEFAULT 0 NOT NULL,
+    TESTS_TOTAL     NUMBER(6)      DEFAULT 0 NOT NULL,
+    USED_HINT       NUMBER(1)      DEFAULT 0 NOT NULL CHECK (USED_HINT IN (0,1)),
+    AI_FEEDBACK     CLOB,
+    SUBMITTED_AT    TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_SUB_USER FOREIGN KEY (USER_ID)
+        REFERENCES TRAJECTORY_USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT FK_SUB_QUESTION FOREIGN KEY (QUESTION_ID)
+        REFERENCES QUESTIONS(QUESTION_ID),
+    CONSTRAINT FK_SUB_SESSION FOREIGN KEY (SESSION_ID)
+        REFERENCES PRACTICE_SESSIONS(SESSION_ID) ON DELETE SET NULL,
+    CONSTRAINT CHK_SUB_STATUS CHECK (STATUS IN ('PENDING','ACCEPTED','WRONG','TLE','MLE','ERROR','PARTIAL'))
+);
+
+-- -----------------------------------------------------------------------------
+-- JOB_ROLES
+-- -----------------------------------------------------------------------------
+CREATE TABLE JOB_ROLES (
+    ROLE_ID       VARCHAR2(36)  PRIMARY KEY,
+    TITLE         VARCHAR2(100) UNIQUE NOT NULL,
+    DESCRIPTION   CLOB,
+    INDUSTRY      VARCHAR2(100),
+    LEVEL         VARCHAR2(50),
+    IS_ACTIVE     NUMBER(1)     DEFAULT 1 NOT NULL CHECK (IS_ACTIVE IN (0,1))
+);
+
+-- -----------------------------------------------------------------------------
+-- JOB_ROLE_SKILLS
+-- -----------------------------------------------------------------------------
+CREATE TABLE JOB_ROLE_SKILLS (
+    ROLE_ID      VARCHAR2(36)  NOT NULL,
+    SKILL_ID     VARCHAR2(36)  NOT NULL,
+    MIN_PROF     NUMBER(5,2)   DEFAULT 60 NOT NULL,
+    IMPORTANCE   NUMBER(3,2)   DEFAULT 1.0 NOT NULL,
+    PRIMARY KEY (ROLE_ID, SKILL_ID),
+    CONSTRAINT FK_JRS_ROLE FOREIGN KEY (ROLE_ID)
+        REFERENCES JOB_ROLES(ROLE_ID) ON DELETE CASCADE,
+    CONSTRAINT FK_JRS_SKILL FOREIGN KEY (SKILL_ID)
+        REFERENCES SKILLS(SKILL_ID)
+);
+
+-- -----------------------------------------------------------------------------
+-- USER_TARGET_ROLES
+-- -----------------------------------------------------------------------------
+CREATE TABLE USER_TARGET_ROLES (
+    USER_ROLE_ID  VARCHAR2(36)  PRIMARY KEY,
+    USER_ID       VARCHAR2(36)  NOT NULL,
+    ROLE_ID       VARCHAR2(36)  NOT NULL,
+    IS_PRIMARY    NUMBER(1)     DEFAULT 0 NOT NULL CHECK (IS_PRIMARY IN (0,1)),
+    CREATED_AT    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_UTR_USER FOREIGN KEY (USER_ID)
+        REFERENCES TRAJECTORY_USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT FK_UTR_ROLE FOREIGN KEY (ROLE_ID)
+        REFERENCES JOB_ROLES(ROLE_ID),
+    CONSTRAINT UQ_USER_ROLE UNIQUE (USER_ID, ROLE_ID)
+);
+
+-- -----------------------------------------------------------------------------
+-- INTERVIEWS
+-- -----------------------------------------------------------------------------
+CREATE TABLE INTERVIEWS (
+    INTERVIEW_ID        VARCHAR2(36)   PRIMARY KEY,
+    USER_ID             VARCHAR2(36)   NOT NULL,
+    INTERVIEW_TYPE      VARCHAR2(50)   NOT NULL,
+    JOB_PROFILE         VARCHAR2(200),
+    STATUS              VARCHAR2(20)   DEFAULT 'IN_PROGRESS' NOT NULL,
+    OVERALL_SCORE       NUMBER(5,2),
+    COMMUNICATION_SCR   NUMBER(5,2),
+    TECHNICAL_SCR       NUMBER(5,2),
+    PROBLEM_SOLVING_SCR NUMBER(5,2),
+    DURATION_SEC        NUMBER(8),
+    CREATED_AT          TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    COMPLETED_AT        TIMESTAMP,
+    CONSTRAINT FK_INT_USER FOREIGN KEY (USER_ID)
+        REFERENCES TRAJECTORY_USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT CHK_INT_TYPE CHECK (INTERVIEW_TYPE IN ('TECHNICAL','DSA','SQL','BEHAVIORAL','SYSTEM_DESIGN','ROLE_SPECIFIC')),
+    CONSTRAINT CHK_INT_STATUS CHECK (STATUS IN ('IN_PROGRESS','COMPLETED','ABANDONED'))
+);
+
+-- -----------------------------------------------------------------------------
+-- INTERVIEW_MESSAGES
+-- -----------------------------------------------------------------------------
+CREATE TABLE INTERVIEW_MESSAGES (
+    MESSAGE_ID      VARCHAR2(36)   PRIMARY KEY,
+    INTERVIEW_ID    VARCHAR2(36)   NOT NULL,
+    ROLE            VARCHAR2(20)   NOT NULL,
+    CONTENT         CLOB           NOT NULL,
+    EVAL_FEEDBACK   CLOB,
+    CREATED_AT      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_IM_INTERVIEW FOREIGN KEY (INTERVIEW_ID)
+        REFERENCES INTERVIEWS(INTERVIEW_ID) ON DELETE CASCADE,
+    CONSTRAINT CHK_IM_ROLE CHECK (ROLE IN ('SYSTEM','INTERVIEWER','USER'))
+);
+
+-- -----------------------------------------------------------------------------
+-- RESUMES
+-- -----------------------------------------------------------------------------
+CREATE TABLE RESUMES (
+    RESUME_ID           VARCHAR2(36)   PRIMARY KEY,
+    USER_ID             VARCHAR2(36)   NOT NULL,
+    FILE_NAME           VARCHAR2(255),
+    FILE_PATH           VARCHAR2(500),
+    PARSED_TEXT         CLOB,
+    PARSED_METADATA     CLOB,
+    ATS_SCORE           NUMBER(5,2),
+    DETECTED_GAPS       CLOB,
+    SUGGESTIONS         CLOB,
+    INTERVIEW_QUESTIONS CLOB,
+    ANALYSIS_STATUS     VARCHAR2(20)   DEFAULT 'PENDING' NOT NULL,
+    CREATED_AT          TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    UPDATED_AT          TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_RES_USER FOREIGN KEY (USER_ID)
+        REFERENCES TRAJECTORY_USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT CHK_RES_STATUS CHECK (ANALYSIS_STATUS IN ('PENDING','PROCESSING','COMPLETED','FAILED'))
+);
+
+-- -----------------------------------------------------------------------------
+-- APPLICATIONS (job tracking)
+-- -----------------------------------------------------------------------------
+CREATE TABLE APPLICATIONS (
+    APP_ID           VARCHAR2(36)   PRIMARY KEY,
+    USER_ID          VARCHAR2(36)   NOT NULL,
+    COMPANY_NAME     VARCHAR2(200)  NOT NULL,
+    JOB_TITLE        VARCHAR2(200)  NOT NULL,
+    STAGE            VARCHAR2(50)   DEFAULT 'APPLIED' NOT NULL,
+    SALARY_PACKAGE   VARCHAR2(100),
+    JOB_DESC_TEXT    CLOB,
+    APPLIED_DATE     TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    REMINDER_DATE    TIMESTAMP,
+    NOTES            CLOB,
+    CREATED_AT       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    UPDATED_AT       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_APP_USER FOREIGN KEY (USER_ID)
+        REFERENCES TRAJECTORY_USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT CHK_APP_STAGE CHECK (STAGE IN ('APPLIED','OA','INTERVIEW','OFFER','REJECTED','HIRED'))
+);
+
+-- -----------------------------------------------------------------------------
+-- RECOMMENDATIONS
+-- -----------------------------------------------------------------------------
+CREATE TABLE RECOMMENDATIONS (
+    REC_ID         VARCHAR2(36)   PRIMARY KEY,
+    USER_ID        VARCHAR2(36)   NOT NULL,
+    REC_TYPE       VARCHAR2(50)   NOT NULL,
+    ENTITY_ID      VARCHAR2(36),
+    TITLE          VARCHAR2(500),
+    REASON         VARCHAR2(1000),
+    SCORE          NUMBER(5,4)    DEFAULT 0,
+    IS_DISMISSED   NUMBER(1)      DEFAULT 0 NOT NULL CHECK (IS_DISMISSED IN (0,1)),
+    CREATED_AT     TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    EXPIRES_AT     TIMESTAMP,
+    CONSTRAINT FK_REC_USER FOREIGN KEY (USER_ID)
+        REFERENCES TRAJECTORY_USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT CHK_REC_TYPE CHECK (REC_TYPE IN ('QUESTION','TOPIC','INTERVIEW','RESOURCE','RESUME','CAREER'))
+);
+
+-- -----------------------------------------------------------------------------
+-- PROGRESS_SNAPSHOTS (daily rollups for charts)
+-- -----------------------------------------------------------------------------
+CREATE TABLE PROGRESS_SNAPSHOTS (
+    SNAPSHOT_ID    VARCHAR2(36)   PRIMARY KEY,
+    USER_ID        VARCHAR2(36)   NOT NULL,
+    SNAPSHOT_DATE  DATE           NOT NULL,
+    QUESTIONS_DONE NUMBER(6)      DEFAULT 0 NOT NULL,
+    ACCURACY       NUMBER(5,2),
+    STREAK_DAYS    NUMBER(6)      DEFAULT 0 NOT NULL,
+    OVERALL_SCORE  NUMBER(5,2),
+    SKILLS_JSON    CLOB,
+    CREATED_AT     TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_SNAP_USER FOREIGN KEY (USER_ID)
+        REFERENCES TRAJECTORY_USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT UQ_SNAPSHOT UNIQUE (USER_ID, SNAPSHOT_DATE)
+);
+
+-- -----------------------------------------------------------------------------
+-- AI_FEEDBACK (audit log of AI outputs)
+-- -----------------------------------------------------------------------------
+CREATE TABLE AI_FEEDBACK (
+    FEEDBACK_ID    VARCHAR2(36)   PRIMARY KEY,
+    USER_ID        VARCHAR2(36)   NOT NULL,
+    SOURCE_TYPE    VARCHAR2(50)   NOT NULL,
+    SOURCE_ID      VARCHAR2(36)   NOT NULL,
+    MODEL_USED     VARCHAR2(100),
+    PROMPT_VERSION VARCHAR2(20),
+    INPUT_TOKENS   NUMBER(8),
+    OUTPUT_TOKENS  NUMBER(8),
+    FEEDBACK_JSON  CLOB,
+    CREATED_AT     TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_AIF_USER FOREIGN KEY (USER_ID)
+        REFERENCES TRAJECTORY_USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT CHK_AIF_TYPE CHECK (SOURCE_TYPE IN ('INTERVIEW','SUBMISSION','RESUME','RECOMMENDATION'))
+);
+
+-- =============================================================================
+-- INDEXES
+-- =============================================================================
+CREATE INDEX IDX_PROFILES_USER       ON PROFILES(USER_ID);
+CREATE INDEX IDX_USER_SKILLS_USER    ON USER_SKILLS(USER_ID);
+CREATE INDEX IDX_USER_SKILLS_SKILL   ON USER_SKILLS(SKILL_ID);
+CREATE INDEX IDX_QUESTIONS_CAT       ON QUESTIONS(CATEGORY_ID, DIFFICULTY, IS_ACTIVE);
+CREATE INDEX IDX_SUBMISSIONS_USER    ON SUBMISSIONS(USER_ID, SUBMITTED_AT);
+CREATE INDEX IDX_SUBMISSIONS_Q       ON SUBMISSIONS(QUESTION_ID);
+CREATE INDEX IDX_INTERVIEWS_USER     ON INTERVIEWS(USER_ID, CREATED_AT);
+CREATE INDEX IDX_RESUMES_USER        ON RESUMES(USER_ID, CREATED_AT);
+CREATE INDEX IDX_RECS_USER           ON RECOMMENDATIONS(USER_ID, IS_DISMISSED, CREATED_AT);
+CREATE INDEX IDX_SNAP_USER_DATE      ON PROGRESS_SNAPSHOTS(USER_ID, SNAPSHOT_DATE);
+CREATE INDEX IDX_APPS_USER           ON APPLICATIONS(USER_ID, CREATED_AT);
+CREATE INDEX IDX_INT_MSGS_INTERVIEW  ON INTERVIEW_MESSAGES(INTERVIEW_ID, CREATED_AT);
+CREATE INDEX IDX_SKILLS_CATEGORY     ON SKILLS(CATEGORY_ID);
+
+-- =============================================================================
+-- Done. Run seed.sql next to populate skill categories, skills, job roles,
+-- and sample questions.
+-- =============================================================================
