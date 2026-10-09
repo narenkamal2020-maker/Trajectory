@@ -30,7 +30,7 @@ export function FaqPage() {
       </label>
       <div className="mt-6 space-y-3">
         {items.map((f) => (
-          <details key={f.q} className="group rounded-xl border border-white/10 bg-[var(--color-surface-card)] open:border-[var(--color-gold-border)]">
+          <details key={f.q} className="group rounded-xl border border-white/8 bg-[var(--color-surface-card)] backdrop-blur-xl transition-all open:border-[var(--color-gold-border)]">
             <summary className="flex items-center justify-between gap-3 cursor-pointer list-none px-5 py-4 font-bold">
               {f.q}
               <ChevronDown className="w-4 h-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden />

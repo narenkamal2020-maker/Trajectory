@@ -7,101 +7,126 @@ on:
 permissions:
   contents: write
 
-# ── Desktop: Windows ──────────────────────────────────────────────────────────
 jobs:
+
+# ── Create release first (eliminates parallel-create race condition) ───────────
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Create GitHub Release
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "Trajectory ${{ github.ref_name }}" \
+            --generate-notes \
+            ${{ contains(github.ref_name, '-') && '--prerelease' || '' }} \
+            || echo "Release already exists, continuing"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# ── Desktop: Windows ──────────────────────────────────────────────────────────
   desktop-windows:
+    needs: create-release
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
-      - name: Install app deps
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            app/package-lock.json
+            desktop/package-lock.json
+      - name: Install dependencies
         run: npm ci
         working-directory: app
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: desktop/package-lock.json }
-      - name: Install desktop deps
-        run: npm ci
+      - run: npm ci
         working-directory: desktop
-      - name: Build & package (Windows)
+      - name: Build Windows installer
         run: npm run dist
         working-directory: desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload Windows installer
-        uses: softprops/action-gh-release@v2
-        with:
-          files: desktop/dist/*.exe
-          draft: false
-          generate_release_notes: false
+      - name: Upload to release
+        run: gh release upload "${{ github.ref_name }}" desktop/dist/*.exe --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 # ── Desktop: macOS ────────────────────────────────────────────────────────────
   desktop-macos:
+    needs: create-release
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
-      - name: Install app deps
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            app/package-lock.json
+            desktop/package-lock.json
+      - name: Install dependencies
         run: npm ci
         working-directory: app
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: desktop/package-lock.json }
-      - name: Install desktop deps
-        run: npm ci
+      - run: npm ci
         working-directory: desktop
-      - name: Build & package (macOS)
+      - name: Build macOS disk image
         run: npm run dist
         working-directory: desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload macOS disk image
-        uses: softprops/action-gh-release@v2
-        with:
-          files: desktop/dist/*.dmg
-          draft: false
-          generate_release_notes: false
+      - name: Upload to release
+        run: gh release upload "${{ github.ref_name }}" desktop/dist/*.dmg --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 # ── Desktop: Linux ────────────────────────────────────────────────────────────
   desktop-linux:
+    needs: create-release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
-      - name: Install app deps
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            app/package-lock.json
+            desktop/package-lock.json
+      - name: Install dependencies
         run: npm ci
         working-directory: app
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: desktop/package-lock.json }
-      - name: Install desktop deps
-        run: npm ci
+      - run: npm ci
         working-directory: desktop
-      - name: Build & package (Linux)
+      - name: Build Linux packages
         run: npm run dist
         working-directory: desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload Linux packages
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            desktop/dist/*.AppImage
-            desktop/dist/*.deb
-          draft: false
-          generate_release_notes: false
+      - name: Upload to release
+        run: |
+          gh release upload "${{ github.ref_name }}" desktop/dist/*.AppImage --clobber || true
+          gh release upload "${{ github.ref_name }}" desktop/dist/*.deb --clobber || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 # ── Android ───────────────────────────────────────────────────────────────────
   android:
+    needs: create-release
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 17 }
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        with: { distribution: temurin, java-version: 21 }
       - name: Install web app deps
         run: npm ci
         working-directory: app
@@ -123,45 +148,40 @@ jobs:
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-      - name: Rename APK with version
+      - name: Upload to release
         run: |
           TAG="${{ github.ref_name }}"
           APK=$(find app/android/app/build/outputs/apk/release -name '*.apk' | head -1)
           cp "$APK" "trajectory-android-${TAG}.apk"
-      - name: Upload Android APK
-        uses: softprops/action-gh-release@v2
-        with:
-          files: trajectory-android-*.apk
-          draft: false
-          generate_release_notes: false
+          gh release upload "$TAG" "trajectory-android-${TAG}.apk" --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-# ── Create release with notes ─────────────────────────────────────────────────
-  create-release:
-    runs-on: ubuntu-latest
+# ── Finalise release body ─────────────────────────────────────────────────────
+  finalise:
     needs: [desktop-windows, desktop-macos, desktop-linux, android]
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - name: Finalize GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
-          generate_release_notes: true
-          body: |
-            ## Trajectory ${{ github.ref_name }}
+      - name: Add download table to release
+        run: |
+          gh release edit "${{ github.ref_name }}" --notes "$(cat <<'BODY'
+          ## Trajectory ${{ github.ref_name }}
 
-            ### Downloads
-            | Platform | File | Notes |
-            |----------|------|-------|
-            | Windows  | `Trajectory Setup *.exe` | NSIS installer — Windows 10 (64-bit) or later |
-            | macOS    | `Trajectory-*.dmg` | Disk image — macOS 11 Big Sur or later |
-            | Linux    | `Trajectory-*.AppImage` / `*.deb` | AppImage or Debian package |
-            | Android  | `trajectory-android-*.apk` | Sideload — Android 7.0+ |
-            | iOS      | See [App Store / TestFlight](https://trajectoryapp.dev) | |
+          ### Downloads
+          | Platform | File | Notes |
+          |----------|------|-------|
+          | Windows  | `Trajectory Setup *.exe` | NSIS installer — Windows 10 (64-bit) or later |
+          | macOS    | `Trajectory-*.dmg` | Disk image — macOS 11 Big Sur or later |
+          | Linux    | `Trajectory-*.AppImage` / `*.deb` | AppImage or Debian package |
+          | Android  | `trajectory-android-*.apk` | Sideload — Android 7.0+ |
+          | iOS      | App Store / TestFlight — see website | |
 
-            ### Install notes
-            - **Windows:** If SmartScreen warns, click "More info" → "Run anyway". The app is not code-signed yet.
-            - **macOS:** Drag to Applications. If Gatekeeper blocks, open System Settings → Privacy & Security → Open Anyway.
-            - **Linux (AppImage):** `chmod +x Trajectory-*.AppImage && ./Trajectory-*.AppImage`
-            - **Android:** Enable "Install unknown apps" in Settings when prompted.
+          ### Install notes
+          - **Windows:** If SmartScreen warns, click "More info" → "Run anyway".
+          - **macOS:** Drag to Applications. If Gatekeeper blocks, open System Settings → Privacy & Security → Open Anyway.
+          - **Linux (AppImage):** `chmod +x Trajectory-*.AppImage && ./Trajectory-*.AppImage`
+          - **Android:** Enable "Install unknown apps" in Settings when prompted.
+          BODY
+          )"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

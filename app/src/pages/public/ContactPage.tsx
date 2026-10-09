@@ -72,7 +72,7 @@ export function ContactPage() {
       <h1 className="font-headline text-3xl font-bold">Contact us</h1>
       <p className="text-[var(--color-text-secondary)] mt-2">Questions, feedback or a privacy request — we read every message.</p>
 
-      <div className="mt-6 rounded-2xl border border-white/10 bg-[var(--color-surface-card)] p-4 space-y-2 text-sm">
+      <div className="mt-6 rounded-2xl border border-white/8 bg-[var(--color-surface-card)] backdrop-blur-xl p-4 space-y-2 text-sm">
         <div className="flex flex-wrap items-center gap-2">
           <Mail className="w-4 h-4 text-[var(--color-primary)]" aria-hidden />
           <a href={`mailto:${SITE.contactEmail}`} className="underline">{SITE.contactEmail}</a>

@@ -250,7 +250,7 @@ function PageTeasers() {
             viewport={{ once: true, amount: 0.3 }}
             transition={after(i * 0.1)}>
             <Link to={t.to}
-              className="group flex h-full flex-col rounded-[1.25rem] border border-white/10 bg-white/[0.02] p-6 transition-all hover:border-white/20 hover:bg-white/[0.04]">
+              className="liquid-glass group flex h-full flex-col rounded-[1.25rem] p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_8px_40px_rgba(255,255,255,0.04)]">
               <p className="font-body text-xs text-white/50">{t.label}</p>
               <h3 className="mt-2 font-heading text-xl italic text-white">{t.title}</h3>
               <p className="mt-2 flex-1 font-body text-sm font-light leading-relaxed text-white/60">{t.body}</p>
