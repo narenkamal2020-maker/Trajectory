@@ -4,6 +4,7 @@
   "description": "Trajectory desktop app with offline code execution",
   "main": "main.js",
   "author": "Naren <naren.kamal2020@gmail.com>",
+  "homepage": "https://trajectoryapp.dev",
   "license": "UNLICENSED",
   "scripts": {
     "build:web": "npm --prefix ../app run build && node scripts/copy-web.js",
@@ -31,7 +32,7 @@
       "category": "public.app-category.education"
     },
     "linux": {
-      "target": "AppImage",
+      "target": ["AppImage", "deb"],
       "category": "Education"
     }
   },

@@ -81,3 +81,31 @@
   outline: 2px solid rgba(255, 255, 255, 0.85);
   outline-offset: 3px;
 }
+
+/* ── Detected platform card beam glow — Magic UI border beam ── */
+@keyframes glow-trace {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(120, 80, 255, 0.3),
+      0 0 20px rgba(100, 60, 255, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(160, 120, 255, 0.6),
+      0 0 32px rgba(120, 80, 255, 0.18),
+      0 0 64px rgba(80, 40, 255, 0.07);
+  }
+}
+.glow-detected {
+  animation: glow-trace 2.8s ease-in-out infinite;
+}
+
+/* ── Capability icon ambient glow ── */
+.icon-glow {
+  box-shadow: 0 0 14px rgba(100, 60, 255, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+/* ── Hero title purple haze ── */
+.hero-title-glow {
+  text-shadow: 0 0 80px rgba(120, 80, 255, 0.2), 0 0 140px rgba(80, 50, 200, 0.1);
+}

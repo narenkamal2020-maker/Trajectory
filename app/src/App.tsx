@@ -39,6 +39,9 @@ const TermsPage = lazy(() => import('./pages/public/LegalPages').then((m) => ({ 
 const ContactPage = lazy(() => import('./pages/public/ContactPage').then((m) => ({ default: m.ContactPage })));
 const FaqPage = lazy(() => import('./pages/public/FaqPage').then((m) => ({ default: m.FaqPage })));
 const NotFoundPage = lazy(() => import('./pages/public/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
+const FeaturesPage = lazy(() => import('./pages/public/FeaturesPage').then((m) => ({ default: m.FeaturesPage })));
+const DownloadsPage = lazy(() => import('./pages/public/DownloadsPage').then((m) => ({ default: m.DownloadsPage })));
+const ReleaseNotesPage = lazy(() => import('./pages/public/ReleaseNotesPage').then((m) => ({ default: m.ReleaseNotesPage })));
 
 /** Entry pages for signed-out visitors (signed-in users are sent into the app). */
 const ENTRY = ['/', '/login', '/register'];
@@ -48,6 +51,9 @@ const OPEN: Record<string, () => ReactElement> = {
   '/terms': () => <TermsPage />,
   '/contact': () => <ContactPage />,
   '/faq': () => <FaqPage />,
+  '/features': () => <FeaturesPage />,
+  '/downloads': () => <DownloadsPage />,
+  '/release-notes': () => <ReleaseNotesPage />,
 };
 const APP_ROUTES = ['/dashboard', '/practice', '/interviews', '/skills', '/career', '/analytics', '/resume', '/applications', '/settings', '/onboarding', '/admin'];
 const isAppRoute = (p: string) => APP_ROUTES.some((r) => p === r || p.startsWith(r + '/'));

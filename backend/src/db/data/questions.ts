@@ -6,6 +6,8 @@
  * prove every test case is correct (tests/unit/question-bank.test.ts).
  */
 import type { CodeMeta, SqlMeta } from '../../engine/executor/types';
+import { ARRAYS } from './bank/arrays';
+import { STRUCTURES } from './bank/structures';
 
 export interface QuestionTest {
   args?: unknown[];
@@ -34,7 +36,7 @@ export interface QuestionDef {
 const t = (args: unknown[], expected: unknown, hidden = false): QuestionTest => ({ args, expected, hidden });
 const s = (expected: unknown[][], hidden = false): QuestionTest => ({ expected, hidden });
 
-export const QUESTIONS: QuestionDef[] = [
+const CORE_QUESTIONS: QuestionDef[] = [
   // ───────────────────────────── Arrays & Hashing ─────────────────────────────
   {
     id: 'q-001', title: 'Two Sum', difficulty: 'EASY', categoryId: 'cat-hashing',
@@ -628,4 +630,10 @@ INSERT INTO Sales VALUES (1,'2026-01-03',50),(2,'2026-01-20',70),(3,'2026-02-11'
     tests: [s([['2026-01', 120, 2], ['2026-03', 210, 2]])],
     reference: { sql: `SELECT substr(sold_on,1,7) AS month, SUM(amount) AS revenue, COUNT(*) AS orders FROM Sales GROUP BY month HAVING SUM(amount) > 100 ORDER BY month;` },
   },
+];
+
+export const QUESTIONS: QuestionDef[] = [
+  ...CORE_QUESTIONS,
+  ...ARRAYS,
+  ...STRUCTURES,
 ];

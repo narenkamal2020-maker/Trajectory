@@ -6,8 +6,11 @@ export const cx = (...c: Array<string | false | null | undefined>) => c.filter(B
 
 export function Card({ children, className, accent = false, as: Tag = 'section' }: { children: ReactNode; className?: string; accent?: boolean; as?: 'section' | 'div' | 'article' }) {
   return (
-    <Tag className={cx('rounded-2xl border shadow-lg p-5 bg-[var(--color-surface-card)] backdrop-blur-md',
-      accent ? 'border-[var(--color-gold-border)]' : 'border-white/10', className)}>
+    <Tag className={cx('rounded-2xl border shadow-lg p-5 bg-[var(--color-surface-card)] backdrop-blur-md transition-all duration-300',
+      accent
+        ? 'border-[var(--color-gold-border)] shadow-[0_0_24px_rgba(237,180,11,0.08)]'
+        : 'border-white/10 hover:border-white/20 hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)]',
+      className)}>
       {children}
     </Tag>
   );
@@ -28,8 +31,8 @@ export function CardHeader({ title, eyebrow, action, icon }: { title: ReactNode;
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export function Button({ variant = 'secondary', loading, className, children, ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; loading?: boolean; ref?: Ref<HTMLButtonElement> }) {
   const styles: Record<Variant, string> = {
-    primary: 'bg-[var(--color-primary)] hover:bg-[var(--color-gold)] text-[var(--color-on-primary)] font-bold shadow-[0_0_16px_rgba(237,180,11,0.3)]',
-    secondary: 'bg-[var(--color-surface-container-high)] hover:bg-[var(--color-surface-container-highest)] text-white border border-white/10',
+    primary: 'shimmer-btn bg-[var(--color-primary)] hover:bg-[var(--color-gold)] text-[var(--color-on-primary)] font-bold shadow-[0_0_16px_rgba(237,180,11,0.3)] hover:shadow-[0_0_24px_rgba(237,180,11,0.45)]',
+    secondary: 'bg-[var(--color-surface-container-high)] hover:bg-[var(--color-surface-container-highest)] text-white border border-white/10 hover:border-white/20',
     ghost: 'text-[var(--color-text-secondary)] hover:text-white hover:bg-white/5',
     danger: 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-200 border border-rose-500/30',
   };
@@ -73,7 +76,9 @@ export function ProgressBar({ value, max = 100, marker, label, tone = 'gold' }: 
   const color = tone === 'green' ? 'bg-emerald-400' : tone === 'red' ? 'bg-rose-400' : 'bg-[var(--color-primary)]';
   return (
     <div className="relative w-full h-2 rounded-full bg-[var(--color-surface-container-highest)]" role="progressbar" aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={max} aria-label={label}>
-      <div className={cx('h-full rounded-full transition-[width] duration-700', color)} style={{ width: `${pct}%` }} />
+      <div className={cx('h-full rounded-full transition-[width] duration-700 relative overflow-hidden', color)} style={{ width: `${pct}%` }}>
+        {pct > 10 && <div className="progress-shimmer" aria-hidden />}
+      </div>
       {marker !== undefined && <div className="absolute -top-1 w-0.5 h-4 bg-white/70 rounded" style={{ left: `${Math.min(100, (marker / max) * 100)}%` }} aria-hidden />}
     </div>
   );
@@ -82,9 +87,10 @@ export function ProgressBar({ value, max = 100, marker, label, tone = 'gold' }: 
 /** Circular gauge. */
 export function Ring({ value, size = 120, stroke = 10, label, sublabel }: { value: number; size?: number; stroke?: number; label?: ReactNode; sublabel?: ReactNode }) {
   const r = (size - stroke) / 2, c = 2 * Math.PI * r, pct = Math.max(0, Math.min(100, value));
+  const glow = pct >= 70 ? `drop-shadow(0 0 ${stroke / 1.5}px var(--color-primary))` : undefined;
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90" aria-hidden>
+      <svg width={size} height={size} className="-rotate-90" aria-hidden style={{ filter: glow }}>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-surface-container-highest)" strokeWidth={stroke} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-primary)" strokeWidth={stroke} strokeLinecap="round"
           strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} style={{ transition: 'stroke-dashoffset 0.9s ease' }} />

@@ -1,0 +1,167 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+# ── Desktop: Windows ──────────────────────────────────────────────────────────
+jobs:
+  desktop-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - name: Install app deps
+        run: npm ci
+        working-directory: app
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: desktop/package-lock.json }
+      - name: Install desktop deps
+        run: npm ci
+        working-directory: desktop
+      - name: Build & package (Windows)
+        run: npm run dist
+        working-directory: desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Windows installer
+        uses: softprops/action-gh-release@v2
+        with:
+          files: desktop/dist/*.exe
+          draft: false
+          generate_release_notes: false
+
+# ── Desktop: macOS ────────────────────────────────────────────────────────────
+  desktop-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - name: Install app deps
+        run: npm ci
+        working-directory: app
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: desktop/package-lock.json }
+      - name: Install desktop deps
+        run: npm ci
+        working-directory: desktop
+      - name: Build & package (macOS)
+        run: npm run dist
+        working-directory: desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload macOS disk image
+        uses: softprops/action-gh-release@v2
+        with:
+          files: desktop/dist/*.dmg
+          draft: false
+          generate_release_notes: false
+
+# ── Desktop: Linux ────────────────────────────────────────────────────────────
+  desktop-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - name: Install app deps
+        run: npm ci
+        working-directory: app
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: desktop/package-lock.json }
+      - name: Install desktop deps
+        run: npm ci
+        working-directory: desktop
+      - name: Build & package (Linux)
+        run: npm run dist
+        working-directory: desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Linux packages
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
+          draft: false
+          generate_release_notes: false
+
+# ── Android ───────────────────────────────────────────────────────────────────
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install web app deps
+        run: npm ci
+        working-directory: app
+      - name: Build web + sync to Android
+        run: npm run cap:sync
+        working-directory: app
+      - name: Decode keystore (if secret is set)
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > keystore.jks
+            echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/keystore.jks" >> "$GITHUB_ENV"
+          fi
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      - name: Build release APK
+        run: ./gradlew assembleRelease --no-daemon
+        working-directory: app/android
+        env:
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      - name: Rename APK with version
+        run: |
+          TAG="${{ github.ref_name }}"
+          APK=$(find app/android/app/build/outputs/apk/release -name '*.apk' | head -1)
+          cp "$APK" "trajectory-android-${TAG}.apk"
+      - name: Upload Android APK
+        uses: softprops/action-gh-release@v2
+        with:
+          files: trajectory-android-*.apk
+          draft: false
+          generate_release_notes: false
+
+# ── Create release with notes ─────────────────────────────────────────────────
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [desktop-windows, desktop-macos, desktop-linux, android]
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Finalize GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true
+          body: |
+            ## Trajectory ${{ github.ref_name }}
+
+            ### Downloads
+            | Platform | File | Notes |
+            |----------|------|-------|
+            | Windows  | `Trajectory Setup *.exe` | NSIS installer — Windows 10 (64-bit) or later |
+            | macOS    | `Trajectory-*.dmg` | Disk image — macOS 11 Big Sur or later |
+            | Linux    | `Trajectory-*.AppImage` / `*.deb` | AppImage or Debian package |
+            | Android  | `trajectory-android-*.apk` | Sideload — Android 7.0+ |
+            | iOS      | See [App Store / TestFlight](https://trajectoryapp.dev) | |
+
+            ### Install notes
+            - **Windows:** If SmartScreen warns, click "More info" → "Run anyway". The app is not code-signed yet.
+            - **macOS:** Drag to Applications. If Gatekeeper blocks, open System Settings → Privacy & Security → Open Anyway.
+            - **Linux (AppImage):** `chmod +x Trajectory-*.AppImage && ./Trajectory-*.AppImage`
+            - **Android:** Enable "Install unknown apps" in Settings when prompted.

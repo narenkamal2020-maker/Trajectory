@@ -126,9 +126,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-3 focus:py-2 focus:bg-[var(--color-primary)] focus:text-black focus:rounded">Skip to content</a>
 
       {/* Header */}
-      <header className="fixed top-0 inset-x-0 h-14 z-40 flex items-center justify-between gap-3 px-4 md:px-6 bg-[var(--color-bg-base)]/90 backdrop-blur-xl border-b border-white/10">
+      <header className="fixed top-0 inset-x-0 h-14 z-40 flex items-center justify-between gap-3 px-4 md:px-6 bg-[var(--color-bg-base)]/85 backdrop-blur-2xl border-b border-[var(--color-gold-border)]/30">
+        {/* Subtle gold gradient rule along the bottom edge */}
+        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/20 to-transparent pointer-events-none" aria-hidden />
         <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
-          <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)] shadow-[0_0_10px_var(--color-primary)]" aria-hidden />
+          <span className="logo-pulse w-2.5 h-2.5 rounded-full bg-[var(--color-primary)]" aria-hidden />
           <span className="font-headline text-base font-bold tracking-tight text-[var(--color-primary)]">TRAJECTORY</span>
           {platformKind() !== 'web' && <span className="hidden sm:inline font-mono text-[10px] text-[var(--color-text-secondary)] bg-[var(--color-surface-container-high)] px-1.5 py-0.5 rounded">{platformKind()}</span>}
         </Link>
@@ -177,7 +179,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed left-0 top-14 bottom-0 w-60 flex-col justify-between p-3 bg-[var(--color-bg-base)]/95 border-r border-white/10 z-30" aria-label="Primary">
+      <aside className="hidden md:flex fixed left-0 top-14 bottom-0 w-60 flex-col justify-between p-3 bg-[var(--color-bg-base)]/95 border-r border-[var(--color-gold-border)]/18 z-30 overflow-hidden" aria-label="Primary">
+        {/* Ambient gold orb — bottom left */}
+        <div className="pointer-events-none absolute -bottom-16 -left-8 w-44 h-44 rounded-full bg-[var(--color-primary)]/6 blur-[60px]" aria-hidden />
         <nav className="flex flex-col gap-1">
           {nav.map((n) => {
             const I = n.icon;
@@ -190,8 +194,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="p-3 rounded-xl bg-[var(--color-surface-container-low)] border border-white/5 text-[11px] font-mono space-y-1">
-          <div className="flex items-center gap-1.5 text-[var(--color-secondary)] font-bold"><span className={cx('w-1.5 h-1.5 rounded-full', online ? 'bg-emerald-400' : 'bg-rose-400')} /> {online ? 'Connected' : 'Offline mode'}</div>
+        <div className="relative z-10 p-3 rounded-xl bg-[var(--color-surface-container-low)] border border-white/5 text-[11px] font-mono space-y-1">
+          <div className="flex items-center gap-1.5 text-[var(--color-secondary)] font-bold">
+            <span className="relative inline-flex items-center justify-center">
+              <span className={cx('w-1.5 h-1.5 rounded-full', online ? 'bg-emerald-400' : 'bg-rose-400')} />
+              {online && <span className="absolute inline-flex w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping opacity-60" aria-hidden />}
+            </span>
+            {online ? 'Connected' : 'Offline mode'}
+          </div>
           {engine && <>
             <div className="text-[var(--color-text-muted)]">Evaluator: {engine.llm.startsWith('disabled') ? 'rule-based' : engine.llm}</div>
             <div className="text-[var(--color-text-muted)]">Recommender: {engine.ml ? 'rules + ML' : 'rules'}</div>
@@ -204,17 +214,21 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
 
       {/* Mobile bottom tabs */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 h-16 grid grid-cols-5 bg-[var(--color-bg-base)]/95 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]" aria-label="Primary">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 h-16 grid grid-cols-5 bg-[var(--color-bg-base)]/92 backdrop-blur-2xl border-t border-[var(--color-gold-border)]/20 pb-[env(safe-area-inset-bottom)]" aria-label="Primary">
+        {/* Gold gradient rule along the top edge */}
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/20 to-transparent pointer-events-none" aria-hidden />
         {NAV.filter((n) => n.mobile).map((n) => {
           const I = n.icon;
+          const isActive = active(n.path);
           return (
-            <Link key={n.path} to={n.path} aria-current={active(n.path) ? 'page' : undefined}
-              className={cx('flex flex-col items-center justify-center gap-0.5 text-[10px] font-mono', active(n.path) ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]')}>
+            <Link key={n.path} to={n.path} aria-current={isActive ? 'page' : undefined}
+              className={cx('relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-mono transition-colors', isActive ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]')}>
+              {isActive && <span className="absolute top-1.5 h-0.5 w-6 rounded-full bg-[var(--color-primary)] shadow-[0_0_6px_var(--color-primary)]" aria-hidden />}
               <I className="w-5 h-5" /> {n.label}
             </Link>
           );
         })}
-        <button type="button" onClick={() => setMore(true)} className="flex flex-col items-center justify-center gap-0.5 text-[10px] font-mono text-[var(--color-text-muted)] cursor-pointer">
+        <button type="button" onClick={() => setMore(true)} className="relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-mono text-[var(--color-text-muted)] cursor-pointer">
           <MoreHorizontal className="w-5 h-5" /> More
         </button>
       </nav>
@@ -229,8 +243,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               {nav.filter((n) => !n.mobile).map((n) => {
                 const I = n.icon;
                 return (
-                  <Link key={n.path} to={n.path} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-[var(--color-surface-container-low)] text-xs text-[var(--color-text-secondary)]">
-                    <I className="w-5 h-5 text-[var(--color-primary)]" /> {n.label}
+                  <Link key={n.path} to={n.path} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-[var(--color-surface-container-low)] border border-white/5 hover:border-[var(--color-gold-border)]/40 hover:bg-[var(--color-surface-container-high)] text-xs text-[var(--color-text-secondary)] hover:text-white transition-all">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center"><I className="w-4 h-4 text-[var(--color-primary)]" /></div>
+                    {n.label}
                   </Link>
                 );
               })}

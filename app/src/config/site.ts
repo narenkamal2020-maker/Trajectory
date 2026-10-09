@@ -13,4 +13,10 @@ export const SITE = {
   address: (env.VITE_CONTACT_ADDRESS as string | undefined) ?? '',
   /** Shown on legal pages; bump when the text changes. */
   legalUpdated: '2026-10-04',
+  /** GitHub repository used to fetch release assets on the landing page. */
+  githubRepo: (env.VITE_GITHUB_REPO as string | undefined) ?? 'narenkamal2020-maker/LaunchLane',
+  /** App Store URL — leave empty until the iOS app is live. */
+  appStoreUrl: (env.VITE_APP_STORE_URL as string | undefined) ?? '',
+  /** TestFlight URL — leave empty until the beta is live. */
+  testFlightUrl: (env.VITE_TESTFLIGHT_URL as string | undefined) ?? '',
 } as const;

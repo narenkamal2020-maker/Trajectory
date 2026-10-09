@@ -35,7 +35,10 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-2xl border border-[var(--color-gold-border)] bg-gradient-to-r from-[var(--color-surface-container-low)] via-[var(--color-surface-container)] to-[var(--color-bg-base)] p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <section className="relative overflow-hidden rounded-2xl border border-[var(--color-gold-border)] bg-gradient-to-r from-[var(--color-surface-container-low)] via-[var(--color-surface-container)] to-[var(--color-bg-base)] p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-[0_0_40px_rgba(237,180,11,0.06)]">
+        {/* Ambient gold orb — top right */}
+        <div className="pointer-events-none absolute -top-12 -right-12 w-48 h-48 rounded-full bg-[var(--color-primary)]/8 blur-[50px]" aria-hidden />
+        <div className="pointer-events-none absolute bottom-0 left-1/3 w-32 h-32 rounded-full bg-[var(--color-secondary)]/6 blur-[40px]" aria-hidden />
         <div className="max-w-xl">
           <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--color-primary)] mb-2">Mission control</div>
           <h1 className="font-headline text-2xl sm:text-3xl font-bold text-white">Welcome back, {first}</h1>

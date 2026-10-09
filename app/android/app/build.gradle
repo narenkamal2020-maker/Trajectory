@@ -16,8 +16,20 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {}
+    }
     buildTypes {
         release {
+            // Sign with keystore if CI secrets are present; otherwise produce unsigned APK.
+            def ksPath = System.getenv("ANDROID_KEYSTORE_PATH")
+            if (ksPath) {
+                signingConfigs.release.storeFile = file(ksPath)
+                signingConfigs.release.storePassword = System.getenv("ANDROID_STORE_PASSWORD") ?: ""
+                signingConfigs.release.keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: ""
+                signingConfigs.release.keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
