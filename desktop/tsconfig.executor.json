@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "types": ["node"],
-    "typeRoots": ["../backend/node_modules/@types"]
+    "typeRoots": ["./node_modules/@types"]
   },
   "files": [
     "../backend/src/engine/executor/runner.ts",
