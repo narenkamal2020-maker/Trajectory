@@ -8,10 +8,11 @@ import { Spotlight, NumberTicker } from '../landing/effects';
 import { OrbitScene } from '../components/OrbitScene';
 import {
   ArrowUpRight, ClockIcon, GlobeIcon,
-  DownloadIcon,
+  DownloadIcon, CodeIcon, MicIcon, LightbulbIcon,
 } from '../landing/icons';
 import { SiteFooter, FloatingContact } from './public/PublicLayout';
-import { LANDING_NAV } from './public/LandingLayout';
+import { KineticNav } from '../components/KineticNav';
+import { BentoGrid, BentoCard } from '../components/BentoGrid';
 import '../landing/landing.css';
 
 const HERO_VIDEO = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260619_191346_9d19d66e-86a4-47f7-8dc6-712c1788c3b2.mp4';
@@ -34,70 +35,7 @@ function detectDevice(): Device {
   return 'other';
 }
 
-// ── Navbar ────────────────────────────────────────────────────────────────────
-
-function Navbar() {
-  const [menu, setMenu] = useState(false);
-  return (
-    <header className="fixed left-0 right-0 top-4 z-50 flex items-center justify-between px-8 lg:px-16">
-      <Link to="/" aria-label="Trajectory home" className="liquid-glass flex h-12 w-12 items-center justify-center rounded-full">
-        <span className="font-heading text-2xl italic leading-none text-white">t</span>
-      </Link>
-
-      <nav aria-label="Primary" className="liquid-glass hidden items-center rounded-full px-1.5 py-1.5 md:flex">
-        {LANDING_NAV.map((n) => (
-          <Link key={n.label} to={n.to}
-            className="rounded-full px-3 py-2 font-body text-sm font-medium text-white/90 transition-colors hover:text-white">
-            {n.label}
-          </Link>
-        ))}
-        <Link to="/downloads"
-          className="ml-1 inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 font-body text-sm font-medium text-black transition-colors hover:bg-white/90">
-          Download <DownloadIcon className="h-3.5 w-3.5" />
-        </Link>
-      </nav>
-
-      <div className="flex items-center gap-2">
-        <Link to="/login" className="liquid-glass inline-flex h-12 items-center rounded-full px-5 font-body text-sm font-medium text-white">
-          Sign in
-        </Link>
-        <button type="button" onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-controls="landing-menu"
-          aria-label={menu ? 'Close menu' : 'Open menu'}
-          className="liquid-glass inline-flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-white md:hidden">
-          <span aria-hidden className="relative block h-3.5 w-5">
-            <span className={`absolute left-0 h-0.5 w-5 bg-white transition-transform ${menu ? 'top-1.5 rotate-45' : 'top-0'}`} />
-            <span className={`absolute left-0 top-1.5 h-0.5 w-5 bg-white transition-opacity ${menu ? 'opacity-0' : ''}`} />
-            <span className={`absolute left-0 h-0.5 w-5 bg-white transition-transform ${menu ? 'top-1.5 -rotate-45' : 'top-3'}`} />
-          </span>
-        </button>
-      </div>
-
-      {menu && (
-        <nav id="landing-menu" aria-label="Mobile"
-          className="liquid-glass-strong absolute left-4 right-4 top-16 rounded-2xl p-3 md:hidden">
-          {LANDING_NAV.map((n) => (
-            <Link key={n.label} to={n.to} onClick={() => setMenu(false)}
-              className="block rounded-xl px-4 py-3 font-body text-base text-white/90 hover:bg-white/10">
-              {n.label}
-            </Link>
-          ))}
-          <Link to="/faq" onClick={() => setMenu(false)}
-            className="block rounded-xl px-4 py-3 font-body text-base text-white/90 hover:bg-white/10">
-            FAQ
-          </Link>
-          <Link to="/contact" onClick={() => setMenu(false)}
-            className="block rounded-xl px-4 py-3 font-body text-base text-white/90 hover:bg-white/10">
-            Contact
-          </Link>
-          <Link to="/downloads" onClick={() => setMenu(false)}
-            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-3 font-body font-medium text-black">
-            Download <DownloadIcon className="h-4 w-4" />
-          </Link>
-        </nav>
-      )}
-    </header>
-  );
-}
+// KineticNav is imported from components/KineticNav — handles both desktop and mobile nav overlay.
 
 // ── Sticky mobile download CTA ────────────────────────────────────────────────
 
@@ -149,7 +87,7 @@ function Hero({ device }: { device: Device }) {
       <Spotlight />
 
       <div className="relative z-10 flex min-h-screen flex-col md:h-full">
-        <Navbar />
+        <KineticNav />
 
         <div className="flex flex-1 flex-col items-center justify-center px-4 pt-24 text-center">
           <motion.div {...enter} transition={after(0.4)} className="liquid-glass inline-flex items-center gap-2.5 rounded-full py-1 pl-1 pr-4">
@@ -208,6 +146,133 @@ function Hero({ device }: { device: Device }) {
           </ul>
         </motion.div>
       </div>
+    </section>
+  );
+}
+
+// ── Features bento grid ───────────────────────────────────────────────────────
+
+function SkillsIcon({ className }: { className?: string }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
+      <path d="M3 3v18h18v-2H5V3H3zm4 12h2V9H7v6zm4 2h2V7h-2v10zm4-6h2v4h-2v-4zm4-4h2v8h-2V7z"/>
+    </svg>
+  );
+}
+
+function ResumeIcon({ className }: { className?: string }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6zm2-4h8v2H8v-2zm0-4h8v2H8v-2zm0-4h5v2H8V8z"/>
+    </svg>
+  );
+}
+
+const BENTO_FEATURES = [
+  {
+    Icon: CodeIcon,
+    name: 'Coding Practice',
+    description: '40+ verified problems in JavaScript, Python and SQL — with hidden tests and Elo-weighted scoring.',
+    to: '/features',
+    cta: 'Explore practice',
+    className: 'lg:row-start-1 lg:row-end-4 lg:col-start-2 lg:col-end-3',
+    background: (
+      <svg viewBox="0 0 400 600" fill="none" className="absolute -bottom-10 -right-8 h-[80%] opacity-20">
+        <text x="20" y="120" fontFamily="monospace" fontSize="48" fill="rgba(99,102,241,0.6)">{'</>'}</text>
+        <text x="60" y="220" fontFamily="monospace" fontSize="32" fill="rgba(139,92,246,0.5)">{'fn()'}</text>
+        <text x="10" y="340" fontFamily="monospace" fontSize="28" fill="rgba(236,72,153,0.4)">{'[ ]'}</text>
+        <text x="80" y="460" fontFamily="monospace" fontSize="22" fill="rgba(99,102,241,0.35)">{'#include'}</text>
+        <circle cx="320" cy="150" r="60" stroke="rgba(99,102,241,0.2)" strokeWidth="2" fill="none" />
+        <circle cx="320" cy="150" r="40" stroke="rgba(139,92,246,0.15)" strokeWidth="1" fill="none" />
+      </svg>
+    ),
+  },
+  {
+    Icon: MicIcon,
+    name: 'Mock Interviews',
+    description: 'Behavioral, DSA and system design sessions scored on depth, structure and communication.',
+    to: '/features',
+    cta: 'See how it works',
+    className: 'lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-3',
+    background: (
+      <svg viewBox="0 0 300 300" fill="none" className="absolute -top-8 -right-6 h-[60%] opacity-25">
+        {[1,2,3,4,5].map((i) => (
+          <rect key={i} x={20 + i * 40} y={220 - i * 30} width="28" height={i * 30} rx="4"
+            fill={`rgba(${i % 2 === 0 ? '139,92,246' : '99,102,241'},0.5)`} />
+        ))}
+      </svg>
+    ),
+  },
+  {
+    Icon: LightbulbIcon,
+    name: 'Career Readiness',
+    description: 'Importance-weighted score against your target role, updated after every session.',
+    to: '/features',
+    cta: 'View career tools',
+    className: 'lg:col-start-1 lg:col-end-2 lg:row-start-3 lg:row-end-4',
+    background: (
+      <svg viewBox="0 0 300 200" fill="none" className="absolute right-0 top-0 h-full opacity-20">
+        <circle cx="200" cy="100" r="80" stroke="rgba(255,211,113,0.4)" strokeWidth="1.5" fill="none" />
+        <circle cx="200" cy="100" r="55" stroke="rgba(255,211,113,0.3)" strokeWidth="1" fill="none" />
+        <circle cx="200" cy="100" r="30" fill="rgba(255,211,113,0.12)" />
+      </svg>
+    ),
+  },
+  {
+    Icon: ResumeIcon,
+    name: 'Resume Analysis',
+    description: 'ATS score with line-by-line explainability and skill-gap identification.',
+    to: '/features',
+    cta: 'About resume tools',
+    className: 'lg:col-start-3 lg:col-end-3 lg:row-start-1 lg:row-end-2',
+    background: (
+      <svg viewBox="0 0 300 200" fill="none" className="absolute right-0 top-0 h-full opacity-20">
+        {[40,70,100,130].map((y) => (
+          <rect key={y} x="20" y={y} width={`${160 - y / 2}px`} height="10" rx="2"
+            fill="rgba(99,102,241,0.4)" />
+        ))}
+      </svg>
+    ),
+  },
+  {
+    Icon: SkillsIcon,
+    name: 'Skill Map',
+    description: 'Proficiency tracks update per submission. See exactly which gaps are keeping you under-qualified.',
+    to: '/features',
+    cta: 'Explore skill tracking',
+    className: 'lg:col-start-3 lg:col-end-3 lg:row-start-2 lg:row-end-4',
+    background: (
+      <svg viewBox="0 0 300 400" fill="none" className="absolute -bottom-4 right-0 h-[70%] opacity-20">
+        {[120,80,140,60,110,90].map((h, i) => (
+          <rect key={i} x={10 + i * 46} y={280 - h} width="36" height={h} rx="4"
+            fill={`rgba(${i % 3 === 0 ? '99,102,241' : i % 3 === 1 ? '139,92,246' : '236,72,153'},0.5)`} />
+        ))}
+      </svg>
+    ),
+  },
+];
+
+function FeaturesBento() {
+  const reduced = useReducedMotion();
+  return (
+    <section aria-labelledby="bento-title" className="border-t border-white/5 bg-black px-6 py-20 md:px-16 lg:px-20">
+      <p className="font-body text-sm text-white/50">// Core capabilities</p>
+      <h2 id="bento-title" className="mt-3 font-heading text-4xl italic tracking-[-2px] text-white md:text-5xl">
+        Everything in one place
+      </h2>
+      <motion.div
+        className="mt-10"
+        initial={reduced ? false : { opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+      >
+        <BentoGrid className="lg:grid-rows-3">
+          {BENTO_FEATURES.map((f) => (
+            <BentoCard key={f.name} {...f} />
+          ))}
+        </BentoGrid>
+      </motion.div>
     </section>
   );
 }
@@ -285,6 +350,7 @@ export function LandingPage() {
         </a>
         <main id="landing-main" tabIndex={-1} className="outline-none">
           <Hero device={device} />
+          <FeaturesBento />
           <PageTeasers />
         </main>
         <SiteFooter dark />

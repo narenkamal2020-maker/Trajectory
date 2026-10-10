@@ -28,6 +28,78 @@ code, pre, .font-mono, .font-telemetry {
   font-family: 'JetBrains Mono', monospace;
 }
 
+/* ── BoxLoader — isometric 3D sliding cubes ── */
+.bl-boxes {
+  --bl-size: 32px;
+  --bl-half: 16px;
+  --bl-dur: 800ms;
+  width: calc(var(--bl-size) * 2);
+  height: calc(var(--bl-size) * 2);
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(60deg) rotateZ(45deg);
+}
+.bl-box {
+  width: var(--bl-size);
+  height: var(--bl-size);
+  position: absolute;
+  top: 0; left: 0;
+  transform-style: preserve-3d;
+}
+.bl-box:nth-child(1) { animation: bl-box1 var(--bl-dur) linear infinite; }
+.bl-box:nth-child(2) { animation: bl-box2 var(--bl-dur) linear infinite; }
+.bl-box:nth-child(3) { animation: bl-box3 var(--bl-dur) linear infinite; }
+.bl-box:nth-child(4) { animation: bl-box4 var(--bl-dur) linear infinite; }
+.bl-face {
+  position: absolute;
+  width: var(--bl-size);
+  height: var(--bl-size);
+}
+.bl-front {
+  background: rgba(99, 102, 241, 0.92);
+  transform: translateZ(var(--bl-half));
+  border: 1px solid rgba(129, 140, 248, 0.35);
+}
+.bl-top {
+  background: rgba(139, 92, 246, 0.88);
+  top: calc(0px - var(--bl-half));
+  height: var(--bl-half);
+  transform: rotateX(90deg);
+  transform-origin: top center;
+  border: 1px solid rgba(167, 139, 250, 0.3);
+}
+.bl-right {
+  background: rgba(79, 70, 229, 0.82);
+  right: calc(0px - var(--bl-half));
+  width: var(--bl-half);
+  height: 100%;
+  transform: rotateY(-90deg);
+  transform-origin: right center;
+  border: 1px solid rgba(99, 102, 241, 0.28);
+}
+.bl-back {
+  background: rgba(49, 46, 129, 0.72);
+  transform: translateZ(calc(0px - var(--bl-half)));
+}
+@keyframes bl-box1 {
+  0%, 50% { transform: translate(100%, 0); }
+  100%     { transform: translate(200%, 0); }
+}
+@keyframes bl-box2 {
+  0%   { transform: translate(0, 100%); }
+  50%  { transform: translate(0, 0); }
+  100% { transform: translate(100%, 0); }
+}
+@keyframes bl-box3 {
+  0%, 50% { transform: translate(100%, 100%); }
+  100%    { transform: translate(0, 100%); }
+}
+@keyframes bl-box4 {
+  0%   { transform: translate(200%, 0); }
+  50%  { transform: translate(200%, 100%); }
+  100% { transform: translate(100%, 100%); }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

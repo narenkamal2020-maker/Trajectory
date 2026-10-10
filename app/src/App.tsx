@@ -11,6 +11,7 @@ import { OfflineProvider } from './lib/offline-context';
 import { match, navigate, usePath } from './lib/router';
 import { AppShell } from './components/AppShell';
 import { Spinner } from './components/ui';
+import { BoxLoader } from './components/BoxLoader';
 import { AuthPage } from './pages/AuthPage';
 import { DashboardPage } from './pages/DashboardPage';
 
@@ -42,6 +43,9 @@ const NotFoundPage = lazy(() => import('./pages/public/NotFoundPage').then((m) =
 const FeaturesPage = lazy(() => import('./pages/public/FeaturesPage').then((m) => ({ default: m.FeaturesPage })));
 const DownloadsPage = lazy(() => import('./pages/public/DownloadsPage').then((m) => ({ default: m.DownloadsPage })));
 const ReleaseNotesPage = lazy(() => import('./pages/public/ReleaseNotesPage').then((m) => ({ default: m.ReleaseNotesPage })));
+const AboutPage = lazy(() => import('./pages/public/AboutPage').then((m) => ({ default: m.AboutPage })));
+const PlatformGuidesPage = lazy(() => import('./pages/public/PlatformGuidesPage').then((m) => ({ default: m.PlatformGuidesPage })));
+const SupportPage = lazy(() => import('./pages/public/SupportPage').then((m) => ({ default: m.SupportPage })));
 
 /** Entry pages for signed-out visitors (signed-in users are sent into the app). */
 const ENTRY = ['/', '/login', '/register'];
@@ -54,6 +58,10 @@ const OPEN: Record<string, () => ReactElement> = {
   '/features': () => <FeaturesPage />,
   '/downloads': () => <DownloadsPage />,
   '/release-notes': () => <ReleaseNotesPage />,
+  '/changelog': () => <ReleaseNotesPage />,
+  '/about': () => <AboutPage />,
+  '/platform-guides': () => <PlatformGuidesPage />,
+  '/support': () => <SupportPage />,
 };
 const APP_ROUTES = ['/dashboard', '/practice', '/interviews', '/skills', '/career', '/analytics', '/resume', '/applications', '/settings', '/onboarding', '/admin'];
 const isAppRoute = (p: string) => APP_ROUTES.some((r) => p === r || p.startsWith(r + '/'));
@@ -116,7 +124,7 @@ function Router() {
     if (status === 'anonymous' && isAppRoute(clean)) navigate('/login', true);
   }, [status, clean, requiresOnboarding, user?.role]);
 
-  if (status === 'loading') return <div className="min-h-screen bg-[var(--color-bg-base)]"><Spinner label="Starting Trajectory…" /></div>;
+  if (status === 'loading') return <div className="min-h-screen bg-[#07070f] flex items-center justify-center"><BoxLoader /></div>;
 
   if (OPEN[clean]) return <Suspense fallback={<Spinner />}>{OPEN[clean]()}</Suspense>;
 

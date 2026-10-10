@@ -7,6 +7,12 @@ import { BackToTop, ScrollProgress, ThemeQuickToggle } from '../../components/ex
 import { cx } from '../../components/ui';
 
 const LINKS = [
+  { to: '/features', label: 'Features' },
+  { to: '/downloads', label: 'Downloads' },
+  { to: '/platform-guides', label: 'Guides' },
+  { to: '/release-notes', label: 'Changelog' },
+  { to: '/support', label: 'Support' },
+  { to: '/about', label: 'About' },
   { to: '/faq', label: 'FAQ' },
   { to: '/contact', label: 'Contact' },
   { to: '/privacy', label: 'Privacy' },

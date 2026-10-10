@@ -7,7 +7,8 @@ import '../../landing/landing.css';
 export const LANDING_NAV = [
   { label: 'Features', to: '/features' },
   { label: 'Downloads', to: '/downloads' },
-  { label: 'Release Notes', to: '/release-notes' },
+  { label: 'Support', to: '/support' },
+  { label: 'About', to: '/about' },
 ];
 
 export function LandingInnerNav() {
